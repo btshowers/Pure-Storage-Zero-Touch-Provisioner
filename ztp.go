@@ -70,6 +70,8 @@ func patchRestCall(url string, data []byte) string {
 	return string(respData)
 }
 
+//used for v1 build. incorportated into the init page.
+/*
 func queryArrayPage() ui.Control {
 	vbox := ui.NewVerticalBox()
 	vbox.SetPadded(true)
@@ -114,7 +116,7 @@ func queryArrayPage() ui.Control {
 	})
 
 	return vbox
-}
+}*/
 
 func initializeArrayPage() ui.Control {
 	//fields for the form
@@ -125,6 +127,8 @@ func initializeArrayPage() ui.Control {
 	eulaAccept := ui.NewCheckbox("yes")
 	ntpServer := ui.NewEntry()
 	timeZone := ui.NewEntry()
+	//set default timezone
+	timeZone.SetText("America/Los_Angeles")
 	vir0IP := ui.NewEntry()
 	vir0SNM := ui.NewEntry()
 	vir0GW := ui.NewEntry()
@@ -186,34 +190,7 @@ func initializeArrayPage() ui.Control {
 	entryForm1.Append("Alert Email Address(s)", smtpAlertEmail, false)
 	entryForm1.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
 
-	//COMPANY INFO FIELDS//
-	//define the group for the form
-	/*
-		group2 := ui.NewGroup("Company Info")
-		group2.SetMargined(true)
-		//add group to the vertical box
-		vbox.Append(group2, true)
-		//group1.SetChild(ui.NewNonWrappingMultilineEntry())
-		//define the form for the group
-		entryForm2 := ui.NewForm()
-		entryForm2.SetPadded(true)
-		//embed the company info form fields inside the second form group
-		group2.SetChild(entryForm2)
-
-
-	*/
-	//NTP FIELDS//
-	//group for NTP
-	/*
-		group7 := ui.NewGroup("NTP")
-		group7.SetMargined(true)
-		vbox.Append(group7, true)
-		//defin the form for the group
-		entryForm7 := ui.NewForm()
-		entryForm7.SetPadded(true)
-		//embed the ntp form fields inside the third form group
-		group7.SetChild(entryForm7)
-	*/
+	//seperator line
 	hbox.Append(ui.NewVerticalSeparator(), false)
 
 	//Middle column
@@ -267,17 +244,6 @@ func initializeArrayPage() ui.Control {
 	vbox.SetPadded(true)
 	hbox.Append(vbox, true)
 
-	//SMTP and DNS FORM//
-	/*
-		group8 := ui.NewGroup("Optional")
-		group8.SetMargined(true)
-		vbox.Append(group8, true)
-
-		entryForm8 := ui.NewForm()
-		entryForm8.SetPadded(true)
-		group8.SetChild(entryForm8)
-
-	*/
 	//SUBMIT "GO" BUTTON//
 	group9 := ui.NewGroup("Initialize Array")
 	group9.SetMargined(true)
@@ -287,14 +253,18 @@ func initializeArrayPage() ui.Control {
 	entryForm9.SetPadded(true)
 	group9.SetChild(entryForm9)
 
+	button1 := ui.NewButton("Query")
+	entryForm9.Append("", ui.NewLabel(""), false)
+
 	//submit and go button
-	button2 := ui.NewButton("GO!")
+	button2 := ui.NewButton("Initialize")
 
 	//used if initial prompt for ip is used.
 	tempIP.SetText(ipAddress)
 
 	entryForm9.Append("DHCP IP of Array ", tempIP, false)
-	entryForm9.Append("READY, SET, ", button2, false)
+	entryForm9.Append("Query First, ", button1, false)
+	entryForm9.Append("Configure Array ", button2, false)
 
 	//sets the initResults console to readonly
 	initResult.SetReadOnly(true)
@@ -314,34 +284,127 @@ func initializeArrayPage() ui.Control {
 
 	})
 
+	button1.OnClicked(func(*ui.Button) {
+		initResult.SetText("Processing please wait...")
+		ipAddress = tempIP.Text()
+		//query the FA
+		result := getAPICall("https://" + ipAddress + ":8081/array-initial-config")
+
+		//for demo purposes only
+		//result := getAPICall(ipAddress)
+		defer initResult.SetText(result)
+
+	})
+
 	//initialize the array and do lots of other work
 	button2.OnClicked(func(*ui.Button) {
 		//form validation object instantiation
 		var passed bool = true
 		validate := validator.New()
 
-		//responses from required text fields such as array name, EULA and ntpserver...
-		responses := [6]string{arrayName.Text(), eulaOrg.Text(), eulaName.Text(), eulaTitle.Text(), ntpServer.Text(), timeZone.Text()}
-		//responses from the IP config section for vi0, ct0, and ct1
-		responsesIPs := [9]string{vir0IP.Text(), vir0SNM.Text(), vir0GW.Text(), ct0IP.Text(), ct0SNM.Text(), ct0GW.Text(), ct1IP.Text(), ct1SNM.Text(), ct1GW.Text()}
-		//loop through these arrays and do form validation of being filled out and x number of characters... poor mans validator.
-		for i, r := range responses {
-			err := validate.Var(r, "required")
-			if err != nil {
-				fmt.Println(i)
-				initResult.SetText("Please Fill out All Required Fields then presss GO again.")
-				passed = false
-			}
+		//validate Controller 1 Gateway
+		err7 := validate.Var(ct1GW.Text(), "required,ipv4")
+		if err7 != nil {
+			initResult.SetText("Please provide a valid Gateway for Controller 1")
+			passed = false
 		}
-		//add second array validation for ip addressing.
-		for i, r := range responsesIPs {
-			err := validate.Var(r, "required,gte=8")
-			if err != nil {
-				fmt.Println(i)
-				initResult.SetText("Please Fill out All Required Fields then presss GO again.")
-				passed = false
-			}
+		//validate Controller 1 SN
+		err8 := validate.Var(ct1SNM.Text(), "required,ipv4")
+		if err8 != nil {
+			initResult.SetText("Please provide a valid Subnet Mask for Controller 1")
+			passed = false
 		}
+		//validate Controller 1 IP
+		err9 := validate.Var(ct1IP.Text(), "required,ipv4")
+		if err9 != nil {
+			initResult.SetText("Please provide a valid IP Address for Controller 1")
+			passed = false
+		}
+		//validate Controller 0 Gateway
+		err10 := validate.Var(ct0GW.Text(), "required,ipv4")
+		if err10 != nil {
+			initResult.SetText("Please provide a valid Gateway for Controller 0")
+			passed = false
+		}
+		//validate Controller 0 SN
+		err11 := validate.Var(ct0SNM.Text(), "required,ipv4")
+		if err11 != nil {
+			initResult.SetText("Please provide a valid Subnet Mask for Controller 0")
+			passed = false
+		}
+		//validate Controller 0 IP
+		err12 := validate.Var(ct0IP.Text(), "required,ipv4")
+		if err12 != nil {
+			initResult.SetText("Please provide a valid IP Address for Controller 0")
+			passed = false
+		}
+		//validate Virtual 0 Gateway
+		err13 := validate.Var(vir0GW.Text(), "required,ipv4")
+		if err13 != nil {
+			initResult.SetText("Please provide a valid Gateway for Virtual 0")
+			passed = false
+		}
+		//validate Virtual 0 SN
+		err14 := validate.Var(vir0SNM.Text(), "required,ipv4")
+		if err14 != nil {
+			initResult.SetText("Please provide a valid Subnet Mask for Virtual 0")
+			passed = false
+		}
+		//validate Virtual 0 IP
+		err15 := validate.Var(vir0IP.Text(), "required,ipv4")
+		if err15 != nil {
+			initResult.SetText("Please provide a valid IP Address for Virtual 0")
+			passed = false
+		}
+		//validate TimeZone
+		err6 := validate.Var(timeZone.Text(), "required")
+		if err6 != nil {
+			initResult.SetText("Please provide a valid Timezone")
+			passed = false
+		}
+		//validate Ntp server
+		err5 := validate.Var(ntpServer.Text(), "required")
+		if err5 != nil {
+			initResult.SetText("Please provide an NTP Server")
+			passed = false
+		}
+		//validate eula
+		if eulaAccept.Checked() != true {
+			initResult.SetText("You must accept the terms of our EULA")
+			passed = false
+		}
+		//validate Eula Title
+		err4 := validate.Var(eulaTitle.Text(), "required")
+		if err4 != nil {
+			initResult.SetText("Please provide your Job Title")
+			passed = false
+		}
+		//validate Eula Name
+		err3 := validate.Var(eulaName.Text(), "required")
+		if err3 != nil {
+			initResult.SetText("Please provide your Full Name")
+			passed = false
+		}
+		//validate Eula Org Name
+		err2 := validate.Var(eulaOrg.Text(), "required")
+		if err2 != nil {
+			initResult.SetText("Please provide your Organization Name")
+			passed = false
+		}
+		//validate Array Name
+		err1 := validate.Var(arrayName.Text(), "required")
+		if err1 != nil {
+			initResult.SetText("Please provide the Array Name")
+			passed = false
+		}
+		//validate DHCP Boot IP
+		err0 := validate.Var(tempIP.Text(), "required")
+		if err0 != nil {
+			initResult.SetText("Please provide a valid IP Address for the DHCP boot IP")
+			passed = false
+		}
+
+		//if all validation above passes then proceed...
 		if passed == true {
 			//cool site to generate struct from json https://mholt.github.io/json-to-go/
 			//define the flash array json structure
@@ -419,17 +482,11 @@ func initializeArrayPage() ui.Control {
 				return
 			}
 
-			/*for testing
-			jsonStr := string(FAData)
-			fmt.Println("The JSON data is:")
-			fmt.Println(jsonStr)
-			//ui.MsgBox(mainwin, "JSON To Send", jsonStr)
-			initResult.SetText("JSON to send: \n" + jsonStr)
-			*/
-
 			//make the rest call with the json payload and stores response
-			//resp := patchRestCall("http://"+tempIP.Text()+":8081/array-initial-config", FAData)
-			resp := patchRestCall(tempIP.Text(), FAData)
+			resp := patchRestCall("http://"+tempIP.Text()+":8081/array-initial-config", FAData)
+
+			//rest call for demo purposes.
+			//resp := patchRestCall(tempIP.Text(), FAData)
 
 			//update the initResult field with response.
 			initResult.SetText("JSON Response: \n" + resp)
@@ -441,7 +498,7 @@ func initializeArrayPage() ui.Control {
 }
 
 func setupUI() {
-	mainwin = ui.NewWindow("Pure Storage Zero Touch Provisioner for Flash Array", 640, 480, true)
+	mainwin = ui.NewWindow("Pure Storage Zero Touch Provisioner for Flash Array", 800, 480, true)
 	mainwin.OnClosing(func(*ui.Window) bool {
 		ui.Quit()
 		return true
@@ -455,11 +512,11 @@ func setupUI() {
 	mainwin.SetChild(tab)
 	mainwin.SetMargined(true)
 
-	tab.Append("Query Array", queryArrayPage())
-	tab.SetMargined(0, true)
+	//tab.Append("Query Array", queryArrayPage())
+	//tab.SetMargined(0, true)
 
-	tab.Append("Initialize Flash Array", initializeArrayPage())
-	tab.SetMargined(2, true)
+	tab.Append("ZTP Flash Array", initializeArrayPage())
+	tab.SetMargined(0, true)
 
 	mainwin.Show()
 }
