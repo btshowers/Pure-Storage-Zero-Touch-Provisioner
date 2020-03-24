@@ -259,8 +259,8 @@ func initializeArrayPage() ui.Control {
 	//submit and go button
 	button2 := ui.NewButton("Initialize")
 
-	//used if initial prompt for ip is used.
-	tempIP.SetText(ipAddress)
+	//for demo only
+	//tempIP.SetText("https://pureapisim.azurewebsites.net/api/array-initial-config")
 
 	entryForm9.Append("DHCP IP of Array ", tempIP, false)
 	entryForm9.Append("Query First, ", button1, false)
@@ -288,11 +288,12 @@ func initializeArrayPage() ui.Control {
 		initResult.SetText("Processing please wait...")
 		ipAddress = tempIP.Text()
 		//query the FA
-		result := getAPICall("https://" + ipAddress + ":8081/array-initial-config")
+		result := getAPICall("http://" + ipAddress + ":8081/array-initial-config")
 
 		//for demo purposes only
 		//result := getAPICall(ipAddress)
-		defer initResult.SetText(result)
+
+		initResult.SetText(result)
 
 	})
 
