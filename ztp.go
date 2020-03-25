@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/andlabs/ui"
@@ -393,10 +394,14 @@ func initializeArrayPage() ui.Control {
 			passed = false
 		}
 		//validate Array Name
-		err1 := validate.Var(arrayName.Text(), "required")
+		/*err1 := validate.Var(arrayName.Text(), "required")
 		if err1 != nil {
 			initResult.SetText("Please provide the Array Name")
 			passed = false
+		}*/
+		var rxPat = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,54}[a-zA-Z0-9])?$`)
+		if !rxPat.MatchString(arrayName.Text()) {
+			initResult.SetText("ArrayName has invalid characters.")
 		}
 		//validate DHCP Boot IP
 		err0 := validate.Var(tempIP.Text(), "required")
