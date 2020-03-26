@@ -406,7 +406,7 @@ func initializeArrayPage() ui.Control {
 		//validate DHCP Boot IP
 		err0 := validate.Var(tempIP.Text(), "required")
 		if err0 != nil {
-			initResult.SetText("Please provide a valid IP Address for the DHCP boot IP")
+			initResult.SetText("ArrayName has blank or contains invalid characters.  It must begin with a number or letter, can contain a dash in the body of the name, but must also end with a number or letter.   No more than 55 characters in length.")
 			passed = false
 		}
 
@@ -480,6 +480,7 @@ func initializeArrayPage() ui.Control {
 			FA.EulaAcceptance.Accepted = eulaAccept.Checked()
 			FA.EulaAcceptance.AcceptedBy.FullName = eulaName.Text()
 			FA.EulaAcceptance.AcceptedBy.Organization = eulaOrg.Text()
+			FA.EulaAcceptance.AcceptedBy.JobTitle = eulaTitle.Text()
 
 			//marshal (json encode) the map into a json string
 			FAData, err := json.Marshal(FA)

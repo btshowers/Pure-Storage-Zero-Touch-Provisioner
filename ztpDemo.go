@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/andlabs/ui"
@@ -393,10 +394,14 @@ func initializeArrayPage() ui.Control {
 			passed = false
 		}
 		//validate Array Name
-		err1 := validate.Var(arrayName.Text(), "required")
+		/*err1 := validate.Var(arrayName.Text(), "required")
 		if err1 != nil {
 			initResult.SetText("Please provide the Array Name")
 			passed = false
+		}*/
+		var rxPat = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,54}[a-zA-Z0-9])?$`)
+		if !rxPat.MatchString(arrayName.Text()) {
+			initResult.SetText("ArrayName has blank or contains invalid characters.  It must begin with a number or letter, can contain a dash in the body of the name, but must also end with a number or letter.   No more than 55 characters in length.")
 		}
 		//validate DHCP Boot IP
 		err0 := validate.Var(tempIP.Text(), "required")
@@ -475,6 +480,7 @@ func initializeArrayPage() ui.Control {
 			FA.EulaAcceptance.Accepted = eulaAccept.Checked()
 			FA.EulaAcceptance.AcceptedBy.FullName = eulaName.Text()
 			FA.EulaAcceptance.AcceptedBy.Organization = eulaOrg.Text()
+			FA.EulaAcceptance.AcceptedBy.JobTitle = eulaTitle.Text()
 
 			//marshal (json encode) the map into a json string
 			FAData, err := json.Marshal(FA)

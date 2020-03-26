@@ -1,10 +1,13 @@
 # Project Title
 
-Pure Storage Flash Array Zero Touch Provisioner. This lighweight applicaiton allows engineers to initialize a new FA using this cross-platform applicaiton.
+Pure Storage Flash Array Zero Touch Provisioner. This lighweight application allows engineers to initialize a new FA using this cross-platform application.
 
 ## Getting Started
 
-Download the applicaiton relevant to your desktop OS and execute it.  Fill out the fields and your off.
+Download the application relevant to your desktop OS and execute it.  Fill out the fields and your off.
+
+Also, for testing purposes I compiled the ztpDemo application that in setup to call an Azure Function that is setup to respond to the rest calls for simulation.
+The API endpoint for this testing is [https://pureapisim.azurewebsites.net/api/array-initial-config](https://pureapisim.azurewebsites.net/api/array-initial-config)
 
 ### Prerequisites
 
