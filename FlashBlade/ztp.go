@@ -86,6 +86,37 @@ func getAPICall2(url string, xAuthToken string) *http.Response {
 }
 
 //Post rest function takes 2 parameters and returns a string//
+func postAPICallLogin(url string, apiToken string) string {
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err.Error()
+	}
+	req.Header.Set("api-token", apiToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err.Error()
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err.Error())
+		return err.Error()
+	}
+	s := resp.Header["X-Auth-Token"]
+	t := strings.Replace(s[0], "[", "", -1)
+	t = strings.Replace(t, "]", "", -1)
+	xAuthToken = t
+	fmt.Printf("%v", resp.Header["X-Auth-Token"])
+	//log.Println(string(body))
+	return string(body)
+}
+
+//Post rest function takes 2 parameters and returns a string//
 func postAPICall(url string, apiToken string) string {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, nil)
@@ -107,6 +138,8 @@ func postAPICall(url string, apiToken string) string {
 		fmt.Println(err.Error())
 		return err.Error()
 	}
+
+	fmt.Printf("%v", resp.Header["X-Auth-Token"])
 	//log.Println(string(body))
 	return string(body)
 }
@@ -1065,16 +1098,16 @@ func initializeArrayPage() ui.Control {
 			fmt.Println(apiUrl)
 
 			//make the rest call
-			resp := postAPICall(loginUrl+"/login", apiToken.Text())
+			resp := postAPICallLogin(loginUrl+"/login", apiToken.Text())
 			//set the response in the display of the app
 			initResult.SetText(string(resp))
 			//slice up the respose to parse the a-auth-token from the string
-			parts := strings.Split(string(resp), `"`)
+			/*parts := strings.Split(string(resp), `"`)
 			//fmt.Println(parts[3])
 			//set the fields to the token that was parsed
-			xAuthToken = parts[3]
-			xAuthTokenField.SetText(parts[3])
-			xAuthTokenLabel.SetText(parts[3])
+			xAuthToken = parts[3]*/
+			xAuthTokenField.SetText(xAuthToken)
+			xAuthTokenLabel.SetText(xAuthToken)
 		}
 
 	})
