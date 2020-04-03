@@ -6,6 +6,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -87,6 +88,7 @@ func getAPICall2(url string, xAuthToken string) *http.Response {
 
 //Post rest function takes 2 parameters and returns a string//
 func postAPICallLogin(url string, apiToken string) string {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
@@ -399,7 +401,7 @@ func initializeArrayPage() ui.Control {
 	apiToken := ui.NewEntry()
 	//variables
 	//for demo only
-	apiToken.SetText("2PDoD5iaokKDwGh9uNqt1jpDTNpgshfiOzO643z5ch92Mwycl7veBA==")
+	//apiToken.SetText("2PDoD5iaokKDwGh9uNqt1jpDTNpgshfiOzO643z5ch92Mwycl7veBA==")
 	xAuthTokenField := ui.NewEntry()
 	//apiUrl := ui.NewEntry() //URL for api endpoint
 	loginSubmitButton := ui.NewButton("Submit Query")
