@@ -67,20 +67,24 @@ func urlParser(url string) []string {
 
 //Get rest Function takes 2 parameters but returns an http response object//
 func getAPICall(url string, xAuthToken string) []byte {
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println(err.Error())
-		//return err.Error()
+		return []byte(err.Error())
 	}
 	req.Header.Set("x-auth-token", xAuthToken)
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err.Error())
-		//return err.Error()
+		return []byte(err.Error())
 	}
-	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
+	body, err2 := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err2.Error())
+		return []byte(err2.Error())
+	}
 
 	//log.Println(string(body))
 	return body
@@ -111,8 +115,8 @@ func postAPICallLogin(url string, apiToken string) string {
 	}
 
 	//Sets the x-auth-token from the header response
-	if len(resp.Header["X-Auth-Token"]) > 0 {
-		s := resp.Header["X-Auth-Token"]
+	if len(resp.Header["x-auth-token"]) > 0 {
+		s := resp.Header["x-auth-token"]
 		t := strings.Replace(s[0], "[", "", -1)
 		t = strings.Replace(t, "]", "", -1)
 		xAuthToken = t
@@ -1094,16 +1098,16 @@ func initializeArrayPage() ui.Control {
 	getAPIVersionsButton.OnClicked(func(*ui.Button) {
 		//make sure the api endpoints are in the right format
 		passed := true
-
-		if managementIP.Text() == "" {
-			initResult.SetText("please enter a valid FB url or management IP address.  e.g. https://purefb01.example.com")
+		validate := validator.New()
+		err := validate.Var(managementIP.Text(), "required,ipv4")
+		if err != nil {
+			initResult.SetText("Please provide a valid IP Address for the FB management endpoint")
 			passed = false
 		}
 		if passed == true {
 			//apiUrlLabel.SetText(apiUrl)
-
 			//make the rest call
-			resp := getAPICall(managementIP.Text()+"/api/api_version", apiToken.Text())
+			resp := getAPICall("https://"+managementIP.Text()+"/api/api_version", apiToken.Text())
 
 			type Version struct {
 				Versions []string `json:"versions"`
@@ -1112,12 +1116,13 @@ func initializeArrayPage() ui.Control {
 			var version Version
 			err := json.Unmarshal(resp, &version)
 			if err == nil {
-				fmt.Println("crap!")
+				fmt.Println(err)
 			}
 			fmt.Printf("%v", (len(version.Versions)))
-			apiUrlForm.SetText("https://" + managementIP.Text() + "/api/" + version.Versions[(len(version.Versions)-1)])
-			apiUrlLabel.SetText("https://" + managementIP.Text() + "/api/" + version.Versions[(len(version.Versions)-1)])
-
+			if len(version.Versions) > 0 {
+				apiUrlForm.SetText("https://" + managementIP.Text() + "/api/" + version.Versions[(len(version.Versions)-1)])
+				apiUrlLabel.SetText("https://" + managementIP.Text() + "/api/" + version.Versions[(len(version.Versions)-1)])
+			}
 			//set the response in the display of the app
 			initResult.SetText(string(resp))
 
