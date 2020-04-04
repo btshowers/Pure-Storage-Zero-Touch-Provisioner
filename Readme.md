@@ -49,7 +49,7 @@ FlashBlade
 
 ## Authors
 
-* **Brandon Showers* - - [GIBLAB - BTShowers](https://gitlab.com/btshowers) [About](https://bshowers.com)
+* **Brandon Showers* - - [GIBLAB](https://gitlab.com/btshowers)  OR  [About Me](https://bshowers.com)
 
 
 ## Acknowledgments
