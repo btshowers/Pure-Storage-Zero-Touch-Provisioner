@@ -33,11 +33,11 @@ For MacOS, download the appropriate ZTP binary, open terminal, set the binary to
 
 FlashArray
 
-![image info](https://gitlab.com/btshowers/ztp/-/blob/master/assets/FA.PNG)
+![alt text](assets/FA.PNG)
 
 FlashBlade
 
-![image info](https://gitlab.com/btshowers/ztp/-/blob/master/assets/FB.PNG)
+![alt text1](assets/FB.PNG)
 
 ## Built With
 
