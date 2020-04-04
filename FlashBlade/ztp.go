@@ -115,8 +115,8 @@ func postAPICallLogin(url string, apiToken string) string {
 	}
 
 	//Sets the x-auth-token from the header response
-	if len(resp.Header["x-auth-token"]) > 0 {
-		s := resp.Header["x-auth-token"]
+	if len(resp.Header["X-Auth-Token"]) > 0 {
+		s := resp.Header["X-Auth-Token"]
 		t := strings.Replace(s[0], "[", "", -1)
 		t = strings.Replace(t, "]", "", -1)
 		xAuthToken = t
@@ -1139,7 +1139,7 @@ func initializeArrayPage() ui.Control {
 			loginUrl = (url[0] + "//" + url[2] + "/" + url[3])
 			apiUrl = (url[0] + "//" + url[2] + "/" + url[3] + "/" + url[4])
 		} else {
-			initResult.SetText("please enter a vailid API url that includes the version.  e.g. https://purefb01.example.com/api/1.8")
+			initResult.SetText("please enter a valid API url that includes the version.  e.g. https://purefb01.example.com/api/1.8")
 			passed = false
 		}
 		if passed == true {
