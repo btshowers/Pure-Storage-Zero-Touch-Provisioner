@@ -115,8 +115,8 @@ func postAPICallLogin(url string, apiToken string) string {
 	}
 
 	//Sets the x-auth-token from the header response
-	if len(resp.Header["X-Auth-Token"]) > 0 {
-		s := resp.Header["X-Auth-Token"]
+	if len(resp.Header["x-auth-token"]) > 0 {
+		s := resp.Header["x-auth-token"]
 		t := strings.Replace(s[0], "[", "", -1)
 		t = strings.Replace(t, "]", "", -1)
 		xAuthToken = t
