@@ -1271,7 +1271,7 @@ func initializeArrayPage() ui.Control {
 		//validate ntp servers
 		err2 := validate.Var(hwcName.Text(), "required")
 		if err2 != nil {
-			initResult.SetText("Please provide the Array name")
+			initResult.SetText("Please provide a Hardware Connector name to query for")
 			passed = false
 		}
 		if passed {
