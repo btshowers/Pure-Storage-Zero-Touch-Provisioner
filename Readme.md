@@ -15,10 +15,10 @@ The pureapisim project is here:  [https://gitlab.com/btshowers/pureapisim](https
 
 ### Prerequisites
 
-Windows 10 or higher, Linux, and MAC OS.
+Windows 10 or higher, Linux with UI, or MAC OS.
 
 ```
-For Windows, download and launch ZTP.exe, fill out the form and go.
+For Windows, download and launch the appropriate .exe, fill out the form and go.
 ```
 
 ```
@@ -44,17 +44,13 @@ FlashBlade
 * [UI](https://github.com/andlabs/ui/) - The GUI framework used
 * [Validator v9](https://gopkg.in/go-playground/validator.v9) - form validation
 * [GOLang](https://golang.org/) - Core
-
+* [Crossbuild](https://github.com/magJ/go-ui-crossbuild) - Compiled with Go UI Crossbuild
 
 
 ## Authors
 
-* **Brandon Showers* - - [btshowers](https://gitlab.com/btshowers)
+* **Brandon Showers* - - [GIBLAB - BTShowers](https://gitlab.com/btshowers) [About](https://bshowers.com)
 
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
 ## Acknowledgments
 
