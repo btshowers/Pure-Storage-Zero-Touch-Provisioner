@@ -40,7 +40,7 @@ func urlParser(url string) []string {
 //Go lang doesn't support option parameters so I had to create multiple function
 //with the same purpose to take certain parameters.
 //Get Rest Function takes 2 parameters: url and xauth token and returns a response string//
-func getAPICall(url string, xAuthToken string) string {
+/*func getAPICallOrig(url string, xAuthToken string) string {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -63,10 +63,10 @@ func getAPICall(url string, xAuthToken string) string {
 	}
 	//log.Println(string(body))
 	return string(body)
-}
+}*/
 
 //Get rest Function takes 2 parameters but returns an http response object//
-func getAPICall2(url string, xAuthToken string) *http.Response {
+func getAPICall(url string, xAuthToken string) []byte {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -79,14 +79,14 @@ func getAPICall2(url string, xAuthToken string) *http.Response {
 		fmt.Println(err.Error())
 		//return err.Error()
 	}
-
+	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
 	//log.Println(string(body))
-	return resp
+	return body
 }
 
-//Post rest function takes 2 parameters and returns a string//
+//Post rest function specifically for logon only takes 2 parameters and returns a string//
 func postAPICallLogin(url string, apiToken string) string {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{}
@@ -109,17 +109,21 @@ func postAPICallLogin(url string, apiToken string) string {
 		fmt.Println(err.Error())
 		return err.Error()
 	}
-	s := resp.Header["X-Auth-Token"]
-	t := strings.Replace(s[0], "[", "", -1)
-	t = strings.Replace(t, "]", "", -1)
-	xAuthToken = t
-	fmt.Printf("%v", resp.Header["X-Auth-Token"])
+
+	//Sets the x-auth-token from the header response
+	if len(resp.Header["X-Auth-Token"]) > 0 {
+		s := resp.Header["X-Auth-Token"]
+		t := strings.Replace(s[0], "[", "", -1)
+		t = strings.Replace(t, "]", "", -1)
+		xAuthToken = t
+	}
+	//fmt.Printf("%v", resp.Header["X-Auth-Token"])
 	//log.Println(string(body))
 	return string(body)
 }
 
 //Post rest function takes 2 parameters and returns a string//
-func postAPICall(url string, apiToken string) string {
+/*func postAPICallORIG(url string, apiToken string) string {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
@@ -144,7 +148,7 @@ func postAPICall(url string, apiToken string) string {
 	fmt.Printf("%v", resp.Header["X-Auth-Token"])
 	//log.Println(string(body))
 	return string(body)
-}
+}*/
 
 //Post rest function takes 3 parameters and returns a string//
 func postAPICall2(url string, xAuthToken string, data []byte) string {
@@ -181,7 +185,7 @@ func postAPICall2(url string, xAuthToken string, data []byte) string {
 }
 
 //Post rest function takes 2 parameters returns a string//
-func postAPICall3(url string, apiToken string) []byte {
+/*func postAPICall(url string, apiToken string) []byte {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
@@ -200,7 +204,7 @@ func postAPICall3(url string, apiToken string) []byte {
 
 	//log.Println(string(body))
 	return body
-}
+}*/
 
 //patch rest function takes 3 parameters and returns a string response//
 //patch function takes 3 parameters and returns string//
@@ -404,18 +408,21 @@ func initializeArrayPage() ui.Control {
 	//apiToken.SetText("2PDoD5iaokKDwGh9uNqt1jpDTNpgshfiOzO643z5ch92Mwycl7veBA==")
 	xAuthTokenField := ui.NewEntry()
 	//apiUrl := ui.NewEntry() //URL for api endpoint
-	loginSubmitButton := ui.NewButton("Submit Query")
+	loginSubmitButton := ui.NewButton("Create Session")
+	getAPIVersionsButton := ui.NewButton("Query Versions")
 	//loginApplyTokenButton := ui.NewButton("Apply X-Auth-Token")
 	apiUrlForm := ui.NewEntry()
+	managementIP := ui.NewEntry()
 	//append variables to form
 	loginForm.Append("Array API URL", apiUrlForm, false)
 	loginForm.Append("", ui.NewLabel("format:  https://10.1.1.100/api/1.8"), false)
 	loginForm.Append("api token", apiToken, false)
 	//arrayForm.Append("", ui.NewLabel(""), false)
 	loginForm.Append("", loginSubmitButton, false)
-	//loginForm.Append("", ui.NewLabel(""), false)
-	//loginForm.Append("", ui.NewLabel(""), false)
-	//loginForm.Append("X-Auth-Token", xAuthToken, false)
+	loginForm.Append("", ui.NewLabel(""), false)
+	loginForm.Append("", ui.NewLabel(""), false)
+	loginForm.Append("IP of FB to Query", managementIP, false)
+	loginForm.Append("Get API Versions and build api url", getAPIVersionsButton, false)
 
 	//Array Form//
 	arrayGroup := ui.NewGroup("Array Config")
@@ -1083,6 +1090,41 @@ func initializeArrayPage() ui.Control {
 
 	//Buttons from Forms//
 
+	//QUERY FOR API VERSIONS//
+	getAPIVersionsButton.OnClicked(func(*ui.Button) {
+		//make sure the api endpoints are in the right format
+		passed := true
+
+		if managementIP.Text() == "" {
+			initResult.SetText("please enter a valid FB url or management IP address.  e.g. https://purefb01.example.com")
+			passed = false
+		}
+		if passed == true {
+			//apiUrlLabel.SetText(apiUrl)
+
+			//make the rest call
+			resp := getAPICall(managementIP.Text()+"/api/api_version", apiToken.Text())
+
+			type Version struct {
+				Versions []string `json:"versions"`
+			}
+
+			var version Version
+			err := json.Unmarshal(resp, &version)
+			if err == nil {
+				fmt.Println("crap!")
+			}
+			fmt.Printf("%v", (len(version.Versions)))
+			apiUrlForm.SetText("https://" + managementIP.Text() + "/api/" + version.Versions[(len(version.Versions)-1)])
+			apiUrlLabel.SetText("https://" + managementIP.Text() + "/api/" + version.Versions[(len(version.Versions)-1)])
+
+			//set the response in the display of the app
+			initResult.SetText(string(resp))
+
+		}
+
+	})
+
 	//LOGIN SUBMIT//
 	loginSubmitButton.OnClicked(func(*ui.Button) {
 		//make sure the api endpoints are in the right format
@@ -1116,7 +1158,7 @@ func initializeArrayPage() ui.Control {
 
 	arrayGetButton.OnClicked(func(*ui.Button) {
 		result := getAPICall(apiUrl+"/arrays", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 	})
 
 	arrayPatchButton.OnClicked(func(*ui.Button) {
@@ -1166,7 +1208,7 @@ func initializeArrayPage() ui.Control {
 
 	dnsGetButton.OnClicked(func(*ui.Button) {
 		result := getAPICall(apiUrl+"/dns", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 	})
 
 	dnsPatchButton.OnClicked(func(*ui.Button) {
@@ -1229,7 +1271,7 @@ func initializeArrayPage() ui.Control {
 		}
 		if passed {
 			result := getAPICall(apiUrl+"/hardware-connectors?names="+hwcName.Text(), xAuthToken)
-			initResult.SetText(result)
+			initResult.SetText(string(result))
 		}
 	})
 
@@ -1283,7 +1325,7 @@ func initializeArrayPage() ui.Control {
 	lagGetButton.OnClicked(func(*ui.Button) {
 
 		result := getAPICall(apiUrl+"/link-aggregation-groups", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 
 	})
 
@@ -1379,7 +1421,7 @@ func initializeArrayPage() ui.Control {
 
 	subnetGetButton.OnClicked(func(*ui.Button) {
 		result := getAPICall(apiUrl+"/subnets", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 	})
 
 	subnetPostButton.OnClicked(func(*ui.Button) {
@@ -1548,7 +1590,7 @@ func initializeArrayPage() ui.Control {
 
 	nicGetButton.OnClicked(func(*ui.Button) {
 		result := getAPICall(apiUrl+"/network-interfaces", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 	})
 
 	nicPatchButton.OnClicked(func(*ui.Button) {
@@ -1608,7 +1650,7 @@ func initializeArrayPage() ui.Control {
 
 	smtpGetButton.OnClicked(func(*ui.Button) {
 		result := getAPICall(apiUrl+"/smtp", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 	})
 
 	smtpPatchButton.OnClicked(func(*ui.Button) {
@@ -1656,7 +1698,7 @@ func initializeArrayPage() ui.Control {
 
 	supportGetButton.OnClicked(func(*ui.Button) {
 		result := getAPICall(apiUrl+"/support", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 	})
 
 	supportPatchButton.OnClicked(func(*ui.Button) {
@@ -1711,7 +1753,7 @@ func initializeArrayPage() ui.Control {
 
 	awGetButton.OnClicked(func(*ui.Button) {
 		result := getAPICall(apiUrl+"/alert-watchers", xAuthToken)
-		initResult.SetText(result)
+		initResult.SetText(string(result))
 	})
 
 	awPatchButton.OnClicked(func(*ui.Button) {
@@ -1828,8 +1870,8 @@ func initializeArrayPage() ui.Control {
 	})
 
 	adminsGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICall(apiUrl+"/fbadmins", xAuthToken)
-		initResult.SetText(result)
+		result := getAPICall(apiUrl+"/admins", xAuthToken)
+		initResult.SetText(string(result))
 	})
 
 	adminsPatchButton.OnClicked(func(*ui.Button) {
@@ -1875,14 +1917,14 @@ func initializeArrayPage() ui.Control {
 				return
 			}
 
-			result := patchAPICall(apiUrl+"/fbadmins?names="+adminName.Text(), xAuthToken, FBData)
+			result := patchAPICall(apiUrl+"/admins?names="+adminName.Text(), xAuthToken, FBData)
 			initResult.SetText(result)
 		}
 	})
 
 	finalGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICall(apiUrl+"/validation", xAuthToken)
-		initResult.SetText(result)
+		result := getAPICall(apiUrl+"/setup/validation", xAuthToken)
+		initResult.SetText(string(result))
 	})
 
 	finalPatchButton.OnClicked(func(*ui.Button) {
@@ -1922,7 +1964,7 @@ func initializeArrayPage() ui.Control {
 				return
 			}
 
-			result := patchAPICall(apiUrl+"/finalization", xAuthToken, FBData)
+			result := patchAPICall(apiUrl+"/setup/finalization", xAuthToken, FBData)
 			initResult.SetText(result)
 		}
 	})
