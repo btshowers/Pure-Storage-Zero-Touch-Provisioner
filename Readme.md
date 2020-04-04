@@ -29,6 +29,16 @@ For Linux, (desktop GUI is required) download and launch appropriate ZTP binary,
 For MacOS, download the appropriate ZTP binary, open terminal, set the binary to executable "chmod +x", execute it and fill out the form.
 ```
 
+## Screen Shots
+
+FlashArray
+
+![image info](./assets/FA.png)
+
+FlashBlade
+
+![image info](./assets/FB.png)
+
 ## Built With
 
 * [UI](https://github.com/andlabs/ui/) - The GUI framework used
