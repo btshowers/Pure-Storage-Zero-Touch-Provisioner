@@ -67,7 +67,7 @@ func urlParser(url string) []string {
 
 //Get rest Function takes 2 parameters but returns an http response object//
 func getAPICall(url string, xAuthToken string) []byte {
-
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
