@@ -6,12 +6,35 @@ Pure Storage Flash Array and Flash Blade Zero Touch Provisioner. This lighweight
 
 Download the application binary relevant to your desktop OS and execute it.  Fill out the fields and your off.
 
-Also, for testing purposes I compiled the ztpDemo applications that call an Azure Function that is setup to respond to the rest calls for simulation.
-The FA API endpoint for this testing is [https://pureapisim.azurewebsites.net/api/array-initial-config](https://pureapisim.azurewebsites.net/api/array-initial-config)
+The single console application has two tabs: Flash Array and Flash Blade.
 
-The FB API endpoint for this testing is [https://pureapisim.azurewebsites.net/api](https://pureapisim.azurewebsites.net/api) with the appropriate proceeding functions.  e.g. /login or /subnets, etc...  
+#### Flash Array
 
-The pureapisim project is here:  [https://gitlab.com/btshowers/pureapisim](https://gitlab.com/btshowers/pureapisim)
+![alt text](assets/FA.PNG)
+
+The ZTP Flash Array tab is comprised of 3 columns.  Columnm 1 is the general configurations sections, Column 2 is the IP Addressing section and Column 3 is the Action and Output section.
+
+To begin you will enter the Temp DHCP IP of Flash Array in the "DHCP IP of Array" field in column 3.  You can then Query the Array to make sure you have connectivity.
+
+Next you will fill out the remainder of the fileds in Column 1 and Column 2 according to the specifics of the Array and environment.
+
+When ready to initialize, press the Initialize Array button in Column 3 and view the results in the output window below. 
+
+#### Flash Blade
+
+![alt text1](assets/FB.PNG)
+
+Select the ZTP Flash Blade Tab.
+
+The ZTP Flash Blade tab is comprised of 3 columns as well.  Column 1 provides the 12 Steps necessary to configure a Flash Blade in order of operation.  Each step contains a button that will display the relevant form and controls for the associated step.  Column 2 is the Form fields and controls to query and apply required configurations relevant to each of the 12 steps.  Column 3 provides the output of each action.
+
+To begin you will can either query the Flash Blade to obtain the API versions and auto generate the API url for the "Array API URL" field or you can manually enter the API url in the "Array API URL" field.  If you manually enter the API URL you must include the version and have the format as http://<fqdn or IP to array>/api/<api version>
+
+Once you have the API url in place you will need to provide the "API Token" that will be used to login to the array and generate the "x-auth-token" that will be used for the remainder of the configuration.
+
+When you have both the API token and the API url in place, clicking the "Create Session" button should result in the API URL and x-auth-token labels in column 3 displaying the resulting values.
+
+When the above is successful you are ready to move to Step 2 - Step 12 in succession.
 
 ### Prerequisites
 
