@@ -30,7 +30,7 @@ The ZTP Flash Blade tab is comprised of 3 columns as well.  Column 1 provides th
 
 In order to authenticate to a Flash Blade using the ZTP tool, you will need the managment IP address of the Array as well as the api-token for the default pureuser.  To obtain the default api-token you can ssh into the FB and issue the command ```pureadmin list --api-token --expose```
 
-To begin you will can either query the Flash Blade to obtain the API versions and auto generate the API url for the "Array API URL" field or you can manually enter the API url in the "Array API URL" field.  If you manually enter the API URL you must include the version and have the format as http or [https://\<fqdn or ip of array\>/api/\<api version\>]
+To begin you will can either query the Flash Blade to obtain the API versions and auto generate the API url for the "Array API URL" field or you can manually enter the API url in the "Array API URL" field.  If you manually enter the API URL you must include the version and have the format as http or ```https://\<fqdn or ip of array\>/api/\<api version\>```
 
 ![alt text1](assets/FBQuery.PNG)
 
