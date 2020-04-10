@@ -28,11 +28,17 @@ Select the ZTP Flash Blade Tab.
 
 The ZTP Flash Blade tab is comprised of 3 columns as well.  Column 1 provides the 12 Steps necessary to configure a Flash Blade in order of operation.  Each step contains a button that will display the relevant form and controls for the associated step.  Column 2 is the Form fields and controls to query and apply required configurations relevant to each of the 12 steps.  Column 3 provides the output of each action.
 
+In order to authenticate to a Flash Blade using the ZTP tool, you will need the managment IP address of the Array as well as the api-token for the default pureuser.  To obtain the default api-token you can ssh into the FB and issue the command ```pureadmin list --api-token --expose```
+
 To begin you will can either query the Flash Blade to obtain the API versions and auto generate the API url for the "Array API URL" field or you can manually enter the API url in the "Array API URL" field.  If you manually enter the API URL you must include the version and have the format as [http://\<fqdn or IP to array\>/api/\<api version\>]
+
+![alt text1](assets/FBQuery.PNG)
 
 Once you have the API url in place you will need to provide the "API Token" that will be used to login to the array and generate the "x-auth-token" that will be used for the remainder of the configuration.
 
 When you have both the API token and the API url in place, clicking the "Create Session" button should result in the API URL and x-auth-token labels in column 3 displaying the resulting values.
+
+![alt text1](assets/FBCreateSession.PNG)
 
 When the above is successful you are ready to move to Step 2 - Step 12 in succession.
 
