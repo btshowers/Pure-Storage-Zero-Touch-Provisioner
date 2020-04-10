@@ -28,7 +28,6 @@ var ipAddress = ""
 
 //FLASH BLADE VARS//
 //Global Vars//
-//var mainwin *ui.Window
 var ipAddressFB = ""
 var xAuthToken = ""
 var loginUrl = ""
@@ -155,38 +154,9 @@ func postAPICallLoginFB(url string, apiToken string) string {
 		t = strings.Replace(t, "]", "", -1)
 		xAuthToken = t
 	}
-	//fmt.Printf("%v", resp.Header["X-Auth-Token"])
-	//log.Println(string(body))
+
 	return string(body)
 }
-
-//Post rest function takes 2 parameters and returns a string//
-/*func postAPICallORIG(url string, apiToken string) string {
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	req.Header.Set("api-token", apiToken)
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-
-	fmt.Printf("%v", resp.Header["X-Auth-Token"])
-	//log.Println(string(body))
-	return string(body)
-}*/
 
 //Post rest function takes 3 parameters and returns a string//
 func postAPICall2FB(url string, xAuthToken string, data []byte) string {
@@ -200,8 +170,6 @@ func postAPICall2FB(url string, xAuthToken string, data []byte) string {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-auth-token", xAuthToken)
-	//might use for auth query...
-	//req.Header.Set("Authorization", "Bearer b7d03a6947b217efb6f3ec3bd3504582")
 
 	//make the rest call
 	resp, err := http.DefaultClient.Do(req)
@@ -222,30 +190,7 @@ func postAPICall2FB(url string, xAuthToken string, data []byte) string {
 	return string(respData)
 }
 
-//Post rest function takes 2 parameters returns a string//
-/*func postAPICall(url string, apiToken string) []byte {
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", url, nil)
-	if err != nil {
-		fmt.Println(err.Error())
-		//return err.Error()
-	}
-	req.Header.Set("api-token", apiToken)
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err.Error())
-		//return err.Error()
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	//log.Println(string(body))
-	return body
-}*/
-
 //patch rest function takes 3 parameters and returns a string response//
-//patch function takes 3 parameters and returns string//
 func patchAPICallFB(url string, xAuthToken string, data []byte) string {
 
 	body := bytes.NewReader(data)
@@ -257,8 +202,6 @@ func patchAPICallFB(url string, xAuthToken string, data []byte) string {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-auth-token", xAuthToken)
-	//might use for auth query...
-	//req.Header.Set("Authorization", "Bearer b7d03a6947b217efb6f3ec3bd3504582")
 
 	//make the rest call
 	resp, err := http.DefaultClient.Do(req)
@@ -279,7 +222,6 @@ func patchAPICallFB(url string, xAuthToken string, data []byte) string {
 	return string(respData)
 }
 
-//delete rest function takes 2 parameters and returns a string//
 //delete function takes 2 parameters and returns a string//
 func deleteAPICallFB(url string, xAuthToken string) string {
 	client := &http.Client{}
@@ -302,7 +244,7 @@ func deleteAPICallFB(url string, xAuthToken string) string {
 		fmt.Println(err.Error())
 		return err.Error()
 	}
-	//log.Println(string(body))
+
 	return string(body)
 }
 
@@ -316,9 +258,6 @@ func initializeFATab() ui.Control {
 	eulaTitle := ui.NewEntry()
 	eulaAccept := ui.NewCheckbox("yes")
 	ntpServer := ui.NewEntry()
-	//timeZone := ui.NewEntry()
-	//set default timezone
-	//timeZone.SetText("America/Los_Angeles")
 	vir0IP := ui.NewEntry()
 	vir0SNM := ui.NewEntry()
 	vir0GW := ui.NewEntry()
@@ -460,9 +399,9 @@ func initializeFATab() ui.Control {
 	entryForm9.Append("Query First, ", button1, false)
 	entryForm9.Append("Configure Array ", button2, false)
 
+	//multiline field for showing results of patch api call and form validation messages.
 	//sets the initResults console to readonly
 	initResult.SetReadOnly(true)
-	//multiline field for showing results of patch api call and form validation messages.
 	entryForm9.Append("Init Results", initResult, true)
 
 	//autofill IP config button actions
@@ -548,12 +487,6 @@ func initializeFATab() ui.Control {
 			initResult.SetText("Please provide a valid IP Address for Virtual 0")
 			passed = false
 		}
-		//validate TimeZone
-		/*err6 := validate.Var(timeZone.Text, "required")
-		if err6 != nil {
-			initResult.SetText("Please provide a valid Timezone")
-			passed = false
-		}*/
 		//validate Ntp server
 		err5 := validate.Var(ntpServer.Text(), "required")
 		if err5 != nil {
@@ -584,11 +517,6 @@ func initializeFATab() ui.Control {
 			passed = false
 		}
 		//validate Array Name
-		/*err1 := validate.Var(arrayName.Text(), "required")
-		if err1 != nil {
-			initResult.SetText("Please provide the Array Name")
-			passed = false
-		}*/
 		var rxPat = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,54}[a-zA-Z0-9])?$`)
 		if !rxPat.MatchString(arrayName.Text()) {
 			initResult.SetText("ArrayName has blank or contains invalid characters.  It must begin with a number or letter, can contain a dash in the body of the name, but must also end with a number or letter.   No more than 55 characters in length.")
@@ -711,6 +639,7 @@ func initializeFBTab() ui.Control {
 	hbox.Append(vbox, false)
 
 	//Buttons Group for Left Column//
+
 	//define the group for the form
 	buttonGroup := ui.NewGroup("Form Controls")
 	buttonGroup.SetMargined(true)
@@ -819,20 +748,15 @@ func initializeFBTab() ui.Control {
 	loginGroup := ui.NewGroup("Login")
 	loginGroup.SetMargined(false)
 	vbox.Append(loginGroup, false)
-	//loginGroup.Hide()
 	loginForm := ui.NewForm()
 	loginForm.SetPadded(true)
 	loginGroup.SetChild(loginForm)
 
-	apiToken := ui.NewEntry()
 	//variables
-	//for demo only
-	//apiToken.SetText("2PDoD5iaokKDwGh9uNqt1jpDTNpgshfiOzO643z5ch92Mwycl7veBA==")
+	apiToken := ui.NewEntry()
 	xAuthTokenField := ui.NewEntry()
-	//apiUrl := ui.NewEntry() //URL for api endpoint
 	loginSubmitButton := ui.NewButton("Create Session")
 	getAPIVersionsButton := ui.NewButton("Query Versions")
-	//loginApplyTokenButton := ui.NewButton("Apply X-Auth-Token")
 	apiUrlForm := ui.NewEntry()
 	managementIP := ui.NewEntry()
 	//append variables to form
@@ -859,7 +783,6 @@ func initializeFBTab() ui.Control {
 	arrayForm.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
 	arrayGetButton := ui.NewButton("Query Array")
 	arrayPatchButton := ui.NewButton("Apply To Array")
-	//arrayForm.Append("api token", apiToken, false)
 	arrayForm.Append("", arrayPatchButton, false)
 	arrayForm.Append("", ui.NewLabel(""), false)
 	arrayForm.Append("", arrayGetButton, false)
@@ -878,7 +801,6 @@ func initializeFBTab() ui.Control {
 	dnsForm.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
 	dnsGetButton := ui.NewButton("Query Array")
 	dnsPatchButton := ui.NewButton("Apply To Array")
-	//arrayForm.Append("api token", apiToken, false)
 	dnsForm.Append("", dnsPatchButton, false)
 	dnsForm.Append("", ui.NewLabel(""), false)
 	dnsForm.Append("", dnsGetButton, false)
@@ -940,7 +862,6 @@ func initializeFBTab() ui.Control {
 	lagFormNew := ui.NewForm()
 	lagFormNew.SetPadded(true)
 	lagGroupNew.SetChild(lagFormNew)
-	//lagFormNew.Append("", lagPostButton, false)
 	lagFormNew.Append("LAG Name", lagNameNew, false)
 	lagFormNew.Append("Lag Port Name(s)", lagPortsNew, false)
 	lagFormNew.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
@@ -977,7 +898,6 @@ func initializeFBTab() ui.Control {
 	lagFormDelete := ui.NewForm()
 	lagFormDelete.SetPadded(true)
 	lagGroupDelete.SetChild(lagFormDelete)
-	//lagFormNew.Append("", lagPostButton, false)
 	lagFormDelete.Append("LAG Name", lagNameDelete, false)
 	lagFormDelete.Append("Confirm Delete", lagDeleteConfirm, false)
 	lagDeleteButton := ui.NewButton("Delete LAG")
@@ -1184,22 +1104,16 @@ func initializeFBTab() ui.Control {
 	entryForm9.SetPadded(true)
 	group9.SetChild(entryForm9)
 
+	//labels used to display the api url and x-auth token in third column
 	xAuthTokenLabel := ui.NewLabel("")
 	apiUrlLabel := ui.NewLabel("")
 	xAuthTokenField.SetReadOnly(true)
-	//multiline field for showing results of patch api call and form validation messages.
 	entryForm9.Append("API URL: ", apiUrlLabel, false)
 	entryForm9.Append("X-Auth-Token", xAuthTokenLabel, false)
 
-	//button1 := ui.NewButton("Query")
-	//entryForm9.Append("", ui.NewLabel(""), false)
-
-	//submit and go button
-	//button2 := ui.NewButton("Initialize")
-
+	//multiline field for showing results of patch api call and form validation messages.
 	//sets the initResults console to readonly
 	initResult.SetReadOnly(true)
-	//multiline field for showing results of patch api call and form validation messages.
 	entryForm9.Append("Init Results", initResult, true)
 
 	//Login Form Button
@@ -1510,7 +1424,7 @@ func initializeFBTab() ui.Control {
 
 	})
 
-	//Buttons from Forms//
+	//Buttons Actions from Forms//
 
 	//QUERY FOR API VERSIONS//
 	getAPIVersionsButton.OnClicked(func(*ui.Button) {
@@ -1523,7 +1437,6 @@ func initializeFBTab() ui.Control {
 			passed = false
 		}
 		if passed == true {
-			//apiUrlLabel.SetText(apiUrl)
 			//make the rest call
 			resp := getAPICallFB("https://"+managementIP.Text()+"/api/api_version", apiToken.Text())
 
@@ -1568,11 +1481,6 @@ func initializeFBTab() ui.Control {
 			resp := postAPICallLoginFB(loginUrl+"/login", apiToken.Text())
 			//set the response in the display of the app
 			initResult.SetText(string(resp))
-			//slice up the respose to parse the a-auth-token from the string
-			/*parts := strings.Split(string(resp), `"`)
-			//fmt.Println(parts[3])
-			//set the fields to the token that was parsed
-			xAuthToken = parts[3]*/
 			xAuthTokenField.SetText(xAuthToken)
 			xAuthTokenLabel.SetText(xAuthToken)
 		}
@@ -1681,7 +1589,6 @@ func initializeFBTab() ui.Control {
 
 	//HWC Buttons
 	hwcGetButton.OnClicked(func(*ui.Button) {
-		//name := hwcName.Text()
 		//form validation object instantiation
 		var passed bool = true
 		validate := validator.New()
@@ -1709,16 +1616,6 @@ func initializeFBTab() ui.Control {
 			initResult.SetText("Please provide the Array name")
 			passed = false
 		}
-		/*err1 := validate.Var(hwcLaneSpeed.Text(), "required")
-		if err1 != nil {
-			initResult.SetText("Please provide the Lane Speed")
-			passed = false
-		}
-		err3 := validate.Var(hwcPortCount.Text(), "required")
-		if err1 != nil {
-			initResult.SetText("Please provide the Port Count")
-			passed = false
-		}*/
 
 		if passed == true {
 
@@ -1768,11 +1665,6 @@ func initializeFBTab() ui.Control {
 			initResult.SetText("Please provide the Port Name(s)")
 			passed = false
 		}
-		/*err3 := validate.Var(hwcPortCount.Text(), "required")
-		if err1 != nil {
-			initResult.SetText("Please provide the Port Count")
-			passed = false
-		}*/
 
 		if passed == true {
 			//this was tricky and probably not the best way to accompish this but it works.
@@ -2051,8 +1943,6 @@ func initializeFBTab() ui.Control {
 				Status  string `json:"status"`
 			}
 
-			//slices for multiple entry fields
-
 			//initialize FAS struct object
 			FB := &FAB{}
 			FB.Address = nicAddress.Text()
@@ -2099,8 +1989,6 @@ func initializeFBTab() ui.Control {
 				Relay  string `json:"relay_host"`
 				Domain string `json:"sender_domain"`
 			}
-
-			//slices for multiple entry fields
 
 			//initialize FAS struct object
 			FB := &FAB{}
@@ -2155,8 +2043,6 @@ func initializeFBTab() ui.Control {
 				Proxy     string `json:"proxy"`
 			}
 
-			//slices for multiple entry fields
-
 			//initialize FAS struct object
 			FB := &FAB{}
 			FB.Phonehome = phoneHome
@@ -2208,8 +2094,6 @@ func initializeFBTab() ui.Control {
 			type FAB struct {
 				Enabled string `json:"enabled"`
 			}
-
-			//slices for multiple entry fields
 
 			//initialize FAS struct object
 			FB := &FAB{}
@@ -2274,8 +2158,6 @@ func initializeFBTab() ui.Control {
 				Enabled string `json:"enabled"`
 			}
 
-			//slices for multiple entry fields
-
 			//initialize FAS struct object
 			FB := &FAB{}
 			FB.Enabled = awIsEnabled
@@ -2327,8 +2209,6 @@ func initializeFBTab() ui.Control {
 				CToken string `json:"create_api_token"`
 			}
 
-			//slices for multiple entry fields
-
 			//initialize FAS struct object
 			FB := &FAB{}
 			FB.CToken = adminsCreateTokenIsEnabled
@@ -2374,8 +2254,6 @@ func initializeFBTab() ui.Control {
 				Complete string `json:"setup_completed"`
 			}
 
-			//slices for multiple entry fields
-
 			//initialize FAS struct object
 			FB := &FAB{}
 			FB.Complete = finalSetupCompleteIsComplete
@@ -2391,11 +2269,12 @@ func initializeFBTab() ui.Control {
 			initResult.SetText(result)
 		}
 	})
-	//END Buttons//
+	//END Button Actions from forms//
 
 	return hbox
 }
 
+//define the UI interface//
 func setupUI() {
 	mainwin = ui.NewWindow("Pure Storage Zero Touch Provisioner for Flash Array", 800, 480, true)
 	mainwin.OnClosing(func(*ui.Window) bool {
@@ -2420,6 +2299,7 @@ func setupUI() {
 	mainwin.Show()
 }
 
+//main//
 func main() {
 	ui.Main(setupUI)
 }
