@@ -1,6 +1,9 @@
-//Brandon Showers
-//March 22 2020
-//v1
+/*
+	Pure Storage FlashArray and FlashBlade Zero Touch Provisioner
+	Brandon Showers
+	March 22 2020
+	v1
+*/
 
 package main
 
@@ -14,9 +17,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/andlabs/ui"
 	_ "github.com/andlabs/ui/winmanifest"
+	"github.com/buger/jsonparser"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -32,98 +37,19 @@ var ipAddressFB = ""
 var xAuthToken = ""
 var loginUrl = ""
 var apiUrl = ""
+var steps = make(map[int]string)
+var progressCounter = 0
+var statusCode int
 
 //END FLASH BLADE VARS//
 
-//FLASH ARRAY FUNCTIONS//
+//FUNCTIONS//
 func timeZones() []string {
 	tz := []string{"Africa/Abidjan", "Africa/Accra", "Africa/Addis_Ababa", "Africa/Algiers", "Africa/Asmara", "Africa/Bamako", "Africa/Bangui", "Africa/Banjul", "Africa/Bissau", "Africa/Blantyre", "Africa/Brazzaville", "Africa/Bujumbura", "Africa/Cairo", "Africa/Casablanca", "Africa/Ceuta", "Africa/Conakry", "Africa/Dakar", "Africa/Dar_es_Salaam", "Africa/Djibouti", "Africa/Douala", "Africa/El_Aaiun", "Africa/Freetown", "Africa/Gaborone", "Africa/Harare", "Africa/Johannesburg", "Africa/Juba", "Africa/Kampala", "Africa/Khartoum", "Africa/Kigali", "Africa/Kinshasa", "Africa/Lagos", "Africa/Libreville", "Africa/Lome", "Africa/Luanda", "Africa/Lubumbashi", "Africa/Lusaka", "Africa/Malabo", "Africa/Maputo", "Africa/Maseru", "Africa/Mbabane", "Africa/Mogadishu", "Africa/Monrovia", "Africa/Nairobi", "Africa/Ndjamena", "Africa/Niamey", "Africa/Nouakchott", "Africa/Ouagadougou", "Africa/Porto-Novo", "Africa/Sao_Tome", "Africa/Tripoli", "Africa/Tunis", "Africa/Windhoek", "America/Adak", "America/Anchorage", "America/Anguilla", "America/Antigua", "America/Araguaina", "America/Argentina/Buenos_Aires", "America/Argentina/Catamarca", "America/Argentina/Cordoba", "America/Argentina/Jujuy", "America/Argentina/La_Rioja", "America/Argentina/Mendoza", "America/Argentina/Rio_Gallegos", "America/Argentina/Salta", "America/Argentina/San_Juan", "America/Argentina/San_Luis", "America/Argentina/Tucuman", "America/Argentina/Ushuaia", "America/Aruba", "America/Asuncion", "America/Atikokan", "America/Bahia", "America/Bahia_Banderas", "America/Barbados", "America/Belem", "America/Belize", "America/Blanc-Sablon", "America/Boa_Vista", "America/Bogota", "America/Boise", "America/Cambridge_Bay", "America/Campo_Grande", "America/Cancun", "America/Caracas", "America/Cayenne", "America/Cayman", "America/Chicago", "America/Chihuahua", "America/Costa_Rica", "America/Creston", "America/Cuiaba", "America/Curacao", "America/Danmarkshavn", "America/Dawson", "America/Dawson_Creek", "America/Denver", "America/Detroit", "America/Dominica", "America/Edmonton", "America/Eirunepe", "America/El_Salvador", "America/Fort_Nelson", "America/Fortaleza", "America/Glace_Bay", "America/Godthab", "America/Goose_Bay", "America/Grand_Turk", "America/Grenada", "America/Guadeloupe", "America/Guatemala", "America/Guayaquil", "America/Guyana", "America/Halifax", "America/Havana", "America/Hermosillo", "America/Indiana/Indianapolis", "America/Indiana/Knox", "America/Indiana/Marengo", "America/Indiana/Petersburg", "America/Indiana/Tell_City", "America/Indiana/Vevay", "America/Indiana/Vincennes", "America/Indiana/Winamac", "America/Inuvik", "America/Iqaluit", "America/Jamaica", "America/Juneau", "America/Kentucky/Louisville", "America/Kentucky/Monticello", "America/Kralendijk", "America/La_Paz", "America/Lima", "America/Los_Angeles", "America/Lower_Princes", "America/Maceio", "America/Managua", "America/Manaus", "America/Marigot", "America/Martinique", "America/Matamoros", "America/Mazatlan", "America/Menominee", "America/Merida", "America/Metlakatla", "America/Mexico_City", "America/Miquelon", "America/Moncton", "America/Monterrey", "America/Montevideo", "America/Montserrat", "America/Nassau", "America/New_York", "America/Nipigon", "America/Nome", "America/Noronha", "America/North_Dakota/Beulah", "America/North_Dakota/Center", "America/North_Dakota/New_Salem", "America/Ojinaga", "America/Panama", "America/Pangnirtung", "America/Paramaribo", "America/Phoenix", "America/Port_of_Spain", "America/Port-au-Prince", "America/Porto_Velho", "America/Puerto_Rico", "America/Punta_Arenas", "America/Rainy_River", "America/Rankin_Inlet", "America/Recife", "America/Regina", "America/Resolute", "America/Rio_Branco", "America/Santarem", "America/Santiago", "America/Santo_Domingo", "America/Sao_Paulo", "America/Scoresbysund", "America/Sitka", "America/St_Barthelemy", "America/St_Johns", "America/St_Kitts", "America/St_Lucia", "America/St_Thomas", "America/St_Vincent", "America/Swift_Current", "America/Tegucigalpa", "America/Thule", "America/Thunder_Bay", "America/Tijuana", "America/Toronto", "America/Tortola", "America/Vancouver", "America/Whitehorse", "America/Winnipeg", "America/Yakutat", "America/Yellowknife", "Antarctica/Casey", "Antarctica/Davis", "Antarctica/DumontDUrville", "Antarctica/Macquarie", "Antarctica/Mawson", "Antarctica/McMurdo", "Antarctica/Palmer", "Antarctica/Rothera", "Antarctica/Syowa", "Antarctica/Troll", "Antarctica/Vostok", "Arctic/Longyearbyen", "Asia/Aden", "Asia/Almaty", "Asia/Amman", "Asia/Anadyr", "Asia/Aqtau", "Asia/Aqtobe", "Asia/Ashgabat", "Asia/Atyrau", "Asia/Baghdad", "Asia/Bahrain", "Asia/Baku", "Asia/Bangkok", "Asia/Barnaul", "Asia/Beirut", "Asia/Bishkek", "Asia/Brunei", "Asia/Chita", "Asia/Choibalsan", "Asia/Colombo", "Asia/Damascus", "Asia/Dhaka", "Asia/Dili", "Asia/Dubai", "Asia/Dushanbe", "Asia/Famagusta", "Asia/Gaza", "Asia/Hebron", "Asia/Ho_Chi_Minh", "Asia/Hong_Kong", "Asia/Hovd", "Asia/Irkutsk", "Asia/Jakarta", "Asia/Jayapura", "Asia/Jerusalem", "Asia/Kabul", "Asia/Kamchatka", "Asia/Karachi", "Asia/Kathmandu", "Asia/Khandyga", "Asia/Kolkata", "Asia/Krasnoyarsk", "Asia/Kuala_Lumpur", "Asia/Kuching", "Asia/Kuwait", "Asia/Macau", "Asia/Magadan", "Asia/Makassar", "Asia/Manila", "Asia/Muscat", "Asia/Nicosia", "Asia/Novokuznetsk", "Asia/Novosibirsk", "Asia/Omsk", "Asia/Oral", "Asia/Phnom_Penh", "Asia/Pontianak", "Asia/Pyongyang", "Asia/Qatar", "Asia/Qostanay", "Asia/Qyzylorda", "Asia/Riyadh", "Asia/Sakhalin", "Asia/Samarkand", "Asia/Seoul", "Asia/Shanghai", "Asia/Singapore", "Asia/Srednekolymsk", "Asia/Taipei", "Asia/Tashkent", "Asia/Tbilisi", "Asia/Tehran", "Asia/Thimphu", "Asia/Tokyo", "Asia/Tomsk", "Asia/Ulaanbaatar", "Asia/Urumqi", "Asia/Ust-Nera", "Asia/Vientiane", "Asia/Vladivostok", "Asia/Yakutsk", "Asia/Yangon", "Asia/Yekaterinburg", "Asia/Yerevan", "Atlantic/Azores", "Atlantic/Bermuda", "Atlantic/Canary", "Atlantic/Cape_Verde", "Atlantic/Faroe", "Atlantic/Madeira", "Atlantic/Reykjavik", "Atlantic/South_Georgia", "Atlantic/St_Helena", "Atlantic/Stanley", "Australia/Adelaide", "Australia/Brisbane", "Australia/Broken_Hill", "Australia/Currie", "Australia/Darwin", "Australia/Eucla", "Australia/Hobart", "Australia/Lindeman", "Australia/Lord_Howe", "Australia/Melbourne", "Australia/Perth", "Australia/Sydney", "Europe/Amsterdam", "Europe/Andorra", "Europe/Astrakhan", "Europe/Athens", "Europe/Belgrade", "Europe/Berlin", "Europe/Bratislava", "Europe/Brussels", "Europe/Bucharest", "Europe/Budapest", "Europe/Busingen", "Europe/Chisinau", "Europe/Copenhagen", "Europe/Dublin", "Europe/Gibraltar", "Europe/Guernsey", "Europe/Helsinki", "Europe/Isle_of_Man", "Europe/Istanbul", "Europe/Jersey", "Europe/Kaliningrad", "Europe/Kiev", "Europe/Kirov", "Europe/Lisbon", "Europe/Ljubljana", "Europe/London", "Europe/Luxembourg", "Europe/Madrid", "Europe/Malta", "Europe/Mariehamn", "Europe/Minsk", "Europe/Monaco", "Europe/Moscow", "Europe/Oslo", "Europe/Paris", "Europe/Podgorica", "Europe/Prague", "Europe/Riga", "Europe/Rome", "Europe/Samara", "Europe/San_Marino", "Europe/Sarajevo", "Europe/Saratov", "Europe/Simferopol", "Europe/Skopje", "Europe/Sofia", "Europe/Stockholm", "Europe/Tallinn", "Europe/Tirane", "Europe/Ulyanovsk", "Europe/Uzhgorod", "Europe/Vaduz", "Europe/Vatican", "Europe/Vienna", "Europe/Vilnius", "Europe/Volgograd", "Europe/Warsaw", "Europe/Zagreb", "Europe/Zaporozhye", "Europe/Zurich", "Indian/Antananarivo", "Indian/Chagos", "Indian/Christmas", "Indian/Cocos", "Indian/Comoro", "Indian/Kerguelen", "Indian/Mahe", "Indian/Maldives", "Indian/Mauritius", "Indian/Mayotte", "Indian/Reunion", "Pacific/Apia", "Pacific/Auckland", "Pacific/Bougainville", "Pacific/Chatham", "Pacific/Chuuk", "Pacific/Easter", "Pacific/Efate", "Pacific/Enderbury", "Pacific/Fakaofo", "Pacific/Fiji", "Pacific/Funafuti", "Pacific/Galapagos", "Pacific/Gambier", "Pacific/Guadalcanal", "Pacific/Guam", "Pacific/Honolulu", "Pacific/Kiritimati", "Pacific/Kosrae", "Pacific/Kwajalein", "Pacific/Majuro", "Pacific/Marquesas", "Pacific/Midway", "Pacific/Nauru", "Pacific/Niue", "Pacific/Norfolk", "Pacific/Noumea", "Pacific/Pago_Pago", "Pacific/Palau", "Pacific/Pitcairn", "Pacific/Pohnpei", "Pacific/Port_Moresby", "Pacific/Rarotonga", "Pacific/Saipan", "Pacific/Tahiti", "Pacific/Tarawa", "Pacific/Tongatapu", "Pacific/Wake", "Pacific/Wallis"}
 	return tz
 }
 
-func getAPICallFA(url string) string {
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	//log.Println(string(body))
-	return string(body)
-}
-
-func patchRestCallFA(url string, data []byte) string {
-
-	body := bytes.NewReader(data)
-
-	req, err := http.NewRequest("PATCH", url, body)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	//make the rest call
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	//wait then close the connection to free space.
-	defer resp.Body.Close()
-
-	//converting http.response body to byte array so it can be cast to string to return. *sheesh
-	respData, err2 := ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		fmt.Println(err2.Error())
-		return err2.Error()
-	}
-	//finally return the response as a string back to the console app.
-	return string(respData)
-}
-
-//END FLASH ARRAY FUNCTIONS//
-
-//FLASH BLADE FUNCTIONS//
-//TODO not sure if this method is usefull.. may just move to the login button function
-func urlParser(url string) []string {
-	//returns a slice broken out by forward slash in the url
-	parts := strings.Split(url, "/")
-	return parts
-}
-
-func getAPICallFB(url string, xAuthToken string) []byte {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return []byte(err.Error())
-	}
-	req.Header.Set("x-auth-token", xAuthToken)
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err.Error())
-		return []byte(err.Error())
-	}
-	defer resp.Body.Close()
-	body, err2 := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err2.Error())
-		return []byte(err2.Error())
-	}
-
-	//log.Println(string(body))
-	return body
-}
-
-//Post rest function specifically for logon only takes 2 parameters and returns a string//
+//Post rest function specifically for FB logon only takes 2 parameters and returns a string//
 func postAPICallLoginFB(url string, apiToken string) string {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{}
@@ -138,6 +64,9 @@ func postAPICallLoginFB(url string, apiToken string) string {
 		fmt.Println(err.Error())
 		return err.Error()
 	}
+
+	//set the status code for the response
+	statusCode = resp.StatusCode
 
 	defer resp.Body.Close()
 
@@ -158,98 +87,46 @@ func postAPICallLoginFB(url string, apiToken string) string {
 	return string(body)
 }
 
-//Post rest function takes 3 parameters and returns a string//
-func postAPICall2FB(url string, xAuthToken string, data []byte) string {
-
-	body := bytes.NewReader(data)
-
-	req, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-auth-token", xAuthToken)
-
-	//make the rest call
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	//wait then close the connection to free space.
-	defer resp.Body.Close()
-
-	//converting http.response body to byte array so it can be cast to string to return. *sheesh
-	respData, err2 := ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		fmt.Println(err2.Error())
-		return err2.Error()
-	}
-	//finally return the response as a string back to the console app.
-	return string(respData)
-}
-
-//patch rest function takes 3 parameters and returns a string response//
-func patchAPICallFB(url string, xAuthToken string, data []byte) string {
-
-	body := bytes.NewReader(data)
-
-	req, err := http.NewRequest("PATCH", url, body)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-auth-token", xAuthToken)
-
-	//make the rest call
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
-	//wait then close the connection to free space.
-	defer resp.Body.Close()
-
-	//converting http.response body to byte array so it can be cast to string to return. *sheesh
-	respData, err2 := ioutil.ReadAll(resp.Body)
-	if err2 != nil {
-		fmt.Println(err2.Error())
-		return err2.Error()
-	}
-	//finally return the response as a string back to the console app.
-	return string(respData)
-}
-
-//delete function takes 2 parameters and returns a string//
-func deleteAPICallFB(url string, xAuthToken string) string {
+//PRIMARY REST METHOD//
+func apiCallFB(method, url string, xAuthToken string, data []byte) []byte {
+	//data is only used for post and patch. for delete and get this is nil
+	jsonBody := bytes.NewReader(data)
+	//new http client that ignores ssl cert errors.
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	client := &http.Client{}
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := http.NewRequest(method, url, jsonBody)
 	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
+		fmt.Println(err)
+		return []byte(err.Error())
 	}
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-auth-token", xAuthToken)
+
+	//make the rest call
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
+		fmt.Println(err)
+		return []byte(err.Error())
 	}
-
+	//wait then close the connection to free space.
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err.Error()
-	}
+	//set the status code for the response
+	statusCode = resp.StatusCode
 
-	return string(body)
+	//convert http.response body to byte array
+	body, err2 := ioutil.ReadAll(resp.Body)
+	if err2 != nil {
+		fmt.Println(err2)
+		return []byte(err2.Error())
+	}
+	//finally return the response byte array.
+	return body
 }
 
-//END FLASH BLADE FUNCTIONS//
+//END FUNCTIONS//
 
+//MAIN FLASHARRAY UI WORKER FUNCTION//
 func initializeFATab() ui.Control {
 	//fields for the form
 	arrayName := ui.NewEntry()
@@ -296,7 +173,7 @@ func initializeFATab() ui.Control {
 	group1.SetMargined(true)
 
 	//add group to the vertical box
-	vbox.Append(group1, true)
+	vbox.Append(group1, false)
 
 	//define the form for the group
 	entryForm1 := ui.NewForm()
@@ -311,19 +188,17 @@ func initializeFATab() ui.Control {
 	entryForm1.Append("Your Title", eulaTitle, false)
 	entryForm1.Append("You accept EULA", eulaAccept, false)
 	entryForm1.Append("", ui.NewLabel(""), false)
-	entryForm1.Append("NTP Time Server(s)", ntpServer, false)
-	entryForm1.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
+	entryForm1.Append("NTP Time Server(s)**", ntpServer, false)
 	entryForm1.Append("TimeZone", timeZone, false)
-	entryForm1.Append("OPTIONAL FIELDS", ui.NewLabel("________________________________________"), false)
+	entryForm1.Append("", ui.NewLabel("  ________Optional Below________ "), false)
 	entryForm1.Append("", ui.NewLabel(""), false)
 	entryForm1.Append("DNS Domain", dnsDomain, false)
-	entryForm1.Append("DNS Name Server(s)", dnsServer, false)
-	entryForm1.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
+	entryForm1.Append("DNS Name Server(s)**", dnsServer, false)
 	entryForm1.Append("", ui.NewLabel(""), false)
 	entryForm1.Append("SMTP Relay Host", smtpRelay, false)
 	entryForm1.Append("SMTP sender domain", smtpDomain, false)
-	entryForm1.Append("Alert Email Address(s)", smtpAlertEmail, false)
-	entryForm1.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
+	entryForm1.Append("Alert Email Address(s)**", smtpAlertEmail, false)
+	entryForm1.Append("", ui.NewLabel("**Comma seperated"), false)
 
 	//seperator line
 	hbox.Append(ui.NewVerticalSeparator(), false)
@@ -331,12 +206,12 @@ func initializeFATab() ui.Control {
 	//Middle column
 	vbox = ui.NewVerticalBox()
 	vbox.SetPadded(true)
-	hbox.Append(vbox, true)
+	hbox.Append(vbox, false)
 
 	//VIR0IP FORM//
 	group3 := ui.NewGroup("Virtual Nic 0")
 	group3.SetMargined(true)
-	vbox.Append(group3, true)
+	vbox.Append(group3, false)
 
 	entryForm3 := ui.NewForm()
 	entryForm3.SetPadded(true)
@@ -352,7 +227,7 @@ func initializeFATab() ui.Control {
 	//CT0 FORM//
 	group5 := ui.NewGroup("Controller 0")
 	group5.SetMargined(true)
-	vbox.Append(group5, true)
+	vbox.Append(group5, false)
 	entryForm5 := ui.NewForm()
 	entryForm5.SetPadded(true)
 	group5.SetChild(entryForm5)
@@ -364,7 +239,7 @@ func initializeFATab() ui.Control {
 	//CT1 FORM//
 	group6 := ui.NewGroup("Controller 1")
 	group6.SetMargined(true)
-	vbox.Append(group6, true)
+	vbox.Append(group6, false)
 	entryForm6 := ui.NewForm()
 	entryForm6.SetPadded(true)
 	group6.SetChild(entryForm6)
@@ -402,6 +277,8 @@ func initializeFATab() ui.Control {
 	//multiline field for showing results of patch api call and form validation messages.
 	//sets the initResults console to readonly
 	initResult.SetReadOnly(true)
+	//sets initial instructions into the console window.
+	initResult.SetText("Welcome to the FlashArray Zero Touch Provisioner!\n\nYou should have obtained the DHCP IP of the recently installed FlashArray you will be initializing with this tool.  Enter it above and press the Query button to confirm your connectivity.\n\nWhen you are ready, fill out the form and press the Initialize button to configure your Array.\n\nAfter the Array is initialized, you will not be able to re-connect again with this tool.  You will need to use the CLI or GUI for additonal configuration.\n\nPlease contact Pure Support or your Account team for any questions or issues.")
 	entryForm9.Append("Init Results", initResult, true)
 
 	//autofill IP config button actions
@@ -418,12 +295,15 @@ func initializeFATab() ui.Control {
 	})
 
 	button1.OnClicked(func(*ui.Button) {
-		initResult.SetText("Processing please wait...")
 		ipAddress = tempIP.Text()
 		//query the FA
-		result := getAPICallFA("http://" + ipAddress + ":8081/array-initial-config")
+		result := apiCallFB("GET", "http://"+ipAddress+":8081/array-initial-config", "", nil)
 
-		initResult.SetText(result)
+		//testing only
+		//result := apiCallFB("GET", "https://pureapisim.azurewebsites.net/api/array-initial-config", "", nil)
+
+		//set results from apiCall to the initResult field.
+		initResult.SetText(string(result))
 
 	})
 
@@ -487,10 +367,66 @@ func initializeFATab() ui.Control {
 			initResult.SetText("Please provide a valid IP Address for Virtual 0")
 			passed = false
 		}
+		//validate SMTP Relay Host
+		if smtpRelay.Text() != "" {
+			err8 := validate.Var(smtpRelay.Text(), "fqdn|ip|url")
+			if err8 != nil {
+				initResult.SetText("Please a valid SMTP Relay Host using either FQDN,IP or URL.")
+				passed = false
+			}
+		}
+		//validate SMTP sender domain
+		if smtpDomain.Text() != "" {
+			err9 := validate.Var(smtpDomain.Text(), "fqdn")
+			if err9 != nil {
+				initResult.SetText("Please enter a FQDN for your SMTP sender domain.")
+				passed = false
+			}
+		}
+		//validate alert email addresses.
+		ae := strings.Split(smtpAlertEmail.Text(), ",")
+		if smtpAlertEmail.Text() != "" {
+			for i := 0; i < len(ae); i++ {
+				//fmt.Print(ntp[i] + "\n")
+				err2 := validate.Var(ae[i], "email")
+				if err2 != nil {
+					initResult.SetText("Please provide a valid email address.\n\nIf more than one email address is entered please use comma seperation with no spaces in-between.")
+					passed = false
+				}
+			}
+		}
+		//validate DNS servers if entered
+		ns := strings.Split(dnsServer.Text(), ",")
+		if dnsServer.Text() != "" {
+			for i := 0; i < len(ns); i++ {
+				err6 := validate.Var(ns[i], "fqdn|ip")
+				if err6 != nil {
+					initResult.SetText("Please provide a fqdn or ip for the DNS server.\n\nIf more than one server is entered please use comma seperation with no spaces in-between.")
+					passed = false
+				}
+			}
+		}
+		//validate DNS Domain name
+		if dnsDomain.Text() != "" {
+			err5 := validate.Var(dnsDomain.Text(), "fqdn")
+			if err5 != nil {
+				initResult.SetText("Please a FQDN for your DNS Domain.")
+				passed = false
+			}
+		}
 		//validate Ntp server
-		err5 := validate.Var(ntpServer.Text(), "required")
-		if err5 != nil {
-			initResult.SetText("Please provide an NTP Server")
+		ntp := strings.Split(ntpServer.Text(), ",")
+		for i := 0; i < len(ntp); i++ {
+			//fmt.Print(ntp[i] + "\n")
+			err7 := validate.Var(ntp[i], "fqdn|ip")
+			if err7 != nil {
+				initResult.SetText("Please provide a fqdn or ip for the NTP server.\n\nIf more than one server is entered please use comma seperation with no spaces in-between.")
+				passed = false
+			}
+		}
+		//validate timezone
+		if timeZone.Selected() < 0 {
+			initResult.SetText("Please select a Timezone")
 			passed = false
 		}
 		//validate eula
@@ -517,17 +453,16 @@ func initializeFATab() ui.Control {
 			passed = false
 		}
 		//validate Array Name
-		var rxPat = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,54}[a-zA-Z0-9])?$`)
-		if !rxPat.MatchString(arrayName.Text()) {
+		var rxPatArrayName = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,54}[a-zA-Z0-9])?$`)
+		if !rxPatArrayName.MatchString(arrayName.Text()) {
 			initResult.SetText("ArrayName has blank or contains invalid characters.  It must begin with a number or letter, can contain a dash in the body of the name, but must also end with a number or letter.   No more than 55 characters in length.")
 		}
 		//validate DHCP Boot IP
-		err0 := validate.Var(tempIP.Text(), "required")
+		err0 := validate.Var(tempIP.Text(), "required,ipv4")
 		if err0 != nil {
 			initResult.SetText("Please provide a valid IP Address for the DHCP boot IP")
 			passed = false
 		}
-
 		//if all validation above passes then proceed...
 		if passed == true {
 			//cool site to generate struct from json https://mholt.github.io/json-to-go/
@@ -570,24 +505,18 @@ func initializeFATab() ui.Control {
 				} `json:"eula_acceptance"`
 			}
 
-			//slices for multiple entry fields
-			//split string into slice(array) *need to add conditional here
-			ns := strings.Split(dnsServer.Text(), ",")
-			ntp := strings.Split(ntpServer.Text(), ",")
-			ae := strings.Split(smtpAlertEmail.Text(), ",")
-
 			//initialize FAS struct object
 			FA := &FAS{}
 			FA.ArrayName = arrayName.Text()
 			FA.Ct0Eth0.Address = ct0IP.Text()
 			FA.Ct0Eth0.Netmask = ct0SNM.Text()
 			FA.Ct0Eth0.Gateway = ct0GW.Text()
-			FA.Ct1Eth0.Address = ct0IP.Text()
-			FA.Ct1Eth0.Netmask = ct0SNM.Text()
-			FA.Ct1Eth0.Gateway = ct0GW.Text()
-			FA.Vir0.Address = ct0IP.Text()
-			FA.Vir0.Netmask = ct0SNM.Text()
-			FA.Vir0.Gateway = ct0GW.Text()
+			FA.Ct1Eth0.Address = ct1IP.Text()
+			FA.Ct1Eth0.Netmask = ct1SNM.Text()
+			FA.Ct1Eth0.Gateway = ct1GW.Text()
+			FA.Vir0.Address = vir0IP.Text()
+			FA.Vir0.Netmask = vir0SNM.Text()
+			FA.Vir0.Gateway = vir0GW.Text()
 			FA.DNS.Domain = dnsDomain.Text()
 			FA.DNS.Nameservers = ns
 			FA.NtpServers = ntp
@@ -607,11 +536,16 @@ func initializeFATab() ui.Control {
 				return
 			}
 
-			//Prod make the rest call with the json payload and stores response
-			resp := patchRestCallFA("http://"+tempIP.Text()+":8081/array-initial-config", FAData)
-
+			//make the rest call with the json payload and stores response
+			resp := apiCallFB("PATCH", "http://"+tempIP.Text()+":8081/array-initial-config", "", FAData)
+			//testing
+			//resp := apiCallFB("PATCH", "https://pureapisim.azurewebsites.net/api/array-initial-config", "", FAData)
 			//update the initResult field with response.
-			initResult.SetText("JSON Response: \n" + resp)
+			if statusCode == 200 {
+				initResult.SetText("Success! \n\nResponse: \n\n" + string(resp))
+			} else {
+				initResult.SetText("Error! \n\nStatus Code: \n" + string(statusCode) + "\n\nResponse:\n" + string(resp))
+			}
 
 		}
 	})
@@ -619,14 +553,9 @@ func initializeFATab() ui.Control {
 	return hbox
 }
 
+//MAIN FLASHBLADE UI WORKER FUNCTION//
 func initializeFBTab() ui.Control {
-	//fields for the form
-	arrayName := ui.NewEntry()
-	ntpServer := ui.NewEntry()
-
-	dnsDomain := ui.NewEntry()
-	dnsServer := ui.NewEntry()
-
+	//results field variable used throughout as a "console out"
 	initResult := ui.NewMultilineEntry()
 
 	//first column definition
@@ -638,14 +567,13 @@ func initializeFBTab() ui.Control {
 	vbox.SetPadded(true)
 	hbox.Append(vbox, false)
 
-	//Buttons Group for Left Column//
-
+	//BUTTONS GROUP FOR LEFT COLUMN - FORM CONTROLS//
 	//define the group for the form
 	buttonGroup := ui.NewGroup("Form Controls")
 	buttonGroup.SetMargined(true)
 
 	//add group to the vertical box
-	vbox.Append(buttonGroup, true)
+	vbox.Append(buttonGroup, false)
 
 	///Form Instantiation///
 	//define the form for the button group
@@ -657,7 +585,7 @@ func initializeFBTab() ui.Control {
 	buttonGroup.SetChild(buttonForm)
 	buttonForm.Append("STEP 1 Login", ui.NewLabel(""), false)
 	login := ui.NewButton("Login Page")
-	buttonForm.Append("Apply API Key", login, false)
+	buttonForm.Append("Login Form", login, false)
 	//seperator line
 	hbox.Append(ui.NewVerticalSeparator(), false)
 	///End Button Definition///
@@ -676,73 +604,59 @@ func initializeFBTab() ui.Control {
 	buttonForm.Append("DNS Form", dns, false)
 	///End Button Definition///
 
-	///Button Definition Hardware Connectors///
-	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 4 Hardware-Ctl Config", ui.NewLabel(""), false)
-	hwc := ui.NewButton("HWC Form")
-	buttonForm.Append("HWC Form", hwc, false)
-	///End Button Definition///
-
-	///Button Definition Link Aggregation///
-	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 5 LAG Config", ui.NewLabel(""), false)
-	lag := ui.NewButton("LAG Form")
-	buttonForm.Append("LAG Form", lag, false)
-	///End Button Definition///
-
 	///Button Definition Subnets Aggregation///
 	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 6 Subnet Config", ui.NewLabel(""), false)
+	buttonForm.Append("STEP 4 Subnet Config", ui.NewLabel(""), false)
 	subnet := ui.NewButton("Subnet Form")
 	buttonForm.Append("Subnet Form", subnet, false)
 	///End Button Definition///
 
 	///Button Definition Network Interfaces///
 	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 7 Network Config", ui.NewLabel(""), false)
+	buttonForm.Append("STEP 5 Network Config", ui.NewLabel(""), false)
 	network := ui.NewButton("NIC Form")
 	buttonForm.Append("NIC Form", network, false)
 	///End Button Definition///
 
 	///Button Definition smtp///
 	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 8 SMTP Config", ui.NewLabel(""), false)
+	buttonForm.Append("STEP 6 SMTP Config", ui.NewLabel(""), false)
 	smtp := ui.NewButton("SMTP Form")
 	buttonForm.Append("SMTP Form", smtp, false)
 	///End Button Definition///
 
 	///Button Definition support///
 	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 9 Support Config", ui.NewLabel(""), false)
+	buttonForm.Append("STEP 7 Support Config", ui.NewLabel(""), false)
 	support := ui.NewButton("Support Form")
 	buttonForm.Append("Phonehome Form", support, false)
 	///End Button Definition///
 
 	///Button Definition alert watchers///
 	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 10 Alerts Config", ui.NewLabel(""), false)
+	buttonForm.Append("STEP 8 Alerts Config", ui.NewLabel(""), false)
 	aw := ui.NewButton("Alerts Form")
 	buttonForm.Append("Alerts Form", aw, false)
 	///End Button Definition///
 
-	///Button Definition admin///
-	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 11 Admins", ui.NewLabel(""), false)
-	admins := ui.NewButton("Admins Form")
-	buttonForm.Append("Admins Form", admins, false)
-	///End Button Definition///
-
 	///Button Definition validation and finalization///
 	buttonGroup.SetChild(buttonForm)
-	buttonForm.Append("STEP 12 Final Step", ui.NewLabel(""), false)
+	buttonForm.Append("STEP 9 Final Step", ui.NewLabel(""), false)
 	final := ui.NewButton("Finalize Form")
 	buttonForm.Append("Finalize Form", final, false)
+	///End Button Definition///
+
+	///Button Definition validation and advanced///
+	buttonGroup.SetChild(buttonForm)
+	buttonForm.Append("", ui.NewLabel(""), false)
+	advanced := ui.NewButton("Advanced")
+	buttonForm.Append("Advanced Options", advanced, false)
 	///End Button Definition///
 
 	//Middle column
 	vbox = ui.NewVerticalBox()
 	vbox.SetPadded(true)
-	hbox.Append(vbox, true)
+	hbox.Append(vbox, false)
 
 	//Login FORM//
 	loginGroup := ui.NewGroup("Login")
@@ -751,26 +665,40 @@ func initializeFBTab() ui.Control {
 	loginForm := ui.NewForm()
 	loginForm.SetPadded(true)
 	loginGroup.SetChild(loginForm)
-
+	loginGroup.Hide()
 	//variables
+	//TESTING ONLY//
+	// apiUrlForm.SetText("https://pureapisim.azurewebsites.net/api/1.8.1")
+	// apiToken.SetText("2PDoD5iaokKDwGh9uNqt1jpDTNpgshfiOzO643z5ch92Mwycl7veBA==")
+	//END TESTING ONLY//
 	apiToken := ui.NewEntry()
+	apiToken.SetText("PURESETUP")
 	xAuthTokenField := ui.NewEntry()
 	loginSubmitButton := ui.NewButton("Create Session")
-	getAPIVersionsButton := ui.NewButton("Query Versions")
+	getAPIVersionsButton := ui.NewButton("Generate URL")
 	apiUrlForm := ui.NewEntry()
 	managementIP := ui.NewEntry()
 	//append variables to form
 	loginForm.Append("Array API URL", apiUrlForm, false)
 	loginForm.Append("", ui.NewLabel("format:  https://10.1.1.100/api/1.8"), false)
-	loginForm.Append("api token", apiToken, false)
-	//arrayForm.Append("", ui.NewLabel(""), false)
 	loginForm.Append("", loginSubmitButton, false)
 	loginForm.Append("", ui.NewLabel(""), false)
-	loginForm.Append("", ui.NewLabel(""), false)
-	loginForm.Append("IP of FB to Query", managementIP, false)
-	loginForm.Append("Get API Versions and build api url", getAPIVersionsButton, false)
+	loginForm.Append("", ui.NewLabel("     __________OR__________"), false)
+	loginForm.Append("", ui.NewLabel("  AUTO GENERATE THE API URL"), false)
+	loginForm.Append("IP of FB", managementIP, false)
+	loginForm.Append("Generate URL", getAPIVersionsButton, false)
 
 	//Array Form//
+	//variables
+	arrayName := ui.NewEntry()
+	ntpServer := ui.NewEntry()
+	timeZone := ui.NewCombobox()
+	tz := timeZones()
+	for i, v := range tz {
+		timeZone.Append(v)
+		i++
+	}
+	//define the form
 	arrayGroup := ui.NewGroup("Array Config")
 	arrayGroup.SetMargined(false)
 	vbox.Append(arrayGroup, false)
@@ -781,6 +709,7 @@ func initializeFBTab() ui.Control {
 	arrayForm.Append("Array Name", arrayName, false)
 	arrayForm.Append("NTP Servers", ntpServer, false)
 	arrayForm.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
+	arrayForm.Append("TimeZone", timeZone, false)
 	arrayGetButton := ui.NewButton("Query Array")
 	arrayPatchButton := ui.NewButton("Apply To Array")
 	arrayForm.Append("", arrayPatchButton, false)
@@ -789,6 +718,10 @@ func initializeFBTab() ui.Control {
 	//end Array Form//
 
 	//DNS Form//
+	//variables
+	dnsDomain := ui.NewEntry()
+	dnsServer := ui.NewEntry()
+	//define the form
 	dnsGroup := ui.NewGroup("DNS Config")
 	dnsGroup.SetMargined(false)
 	vbox.Append(dnsGroup, false)
@@ -806,34 +739,12 @@ func initializeFBTab() ui.Control {
 	dnsForm.Append("", dnsGetButton, false)
 	//end DNS Form//
 
-	//Hardware connector form//
-	hwcName := ui.NewEntry()
-	hwcLaneSpeed := ui.NewEntry()
-	hwcPortCount := ui.NewEntry()
-	hwcGroup := ui.NewGroup("Hardware-Connector Config")
-	hwcGroup.SetMargined(false)
-	vbox.Append(hwcGroup, false)
-	hwcGroup.Hide()
-	hwcForm := ui.NewForm()
-	hwcForm.SetPadded(true)
-	hwcGroup.SetChild(hwcForm)
-	hwcForm.Append("Hardware Connector Name", hwcName, false)
-	hwcForm.Append("Lane Speed", hwcLaneSpeed, false)
-	hwcForm.Append("Port Count", hwcPortCount, false)
-	hwcGetButton := ui.NewButton("Query Array")
-	hwcPatchButton := ui.NewButton("Apply To Array")
-	hwcForm.Append("", hwcPatchButton, false)
-	hwcForm.Append("", ui.NewLabel(""), false)
-	hwcForm.Append("", hwcGetButton, false)
-	//END hardware-Connectors Form//
-
-	//Link Aggregation Groups connector form//
-	//LAG Init group and form
+	//SHOWN IN ADVANCED SECTION//
+	//LAG display Buttons to show sub-forms/
 	lagNew := ui.NewButton("Create New LAG")
 	lagExisting := ui.NewButton("Update Existing")
 	lagGetButton := ui.NewButton("Query LAG")
 	lagDelete := ui.NewButton("Delete LAG")
-
 	lagGroupInit := ui.NewGroup("LAG Options")
 	lagGroupInit.SetMargined(false)
 	vbox.Append(lagGroupInit, false)
@@ -846,6 +757,7 @@ func initializeFBTab() ui.Control {
 	lagFormInit.Append("", lagDelete, false)
 	lagFormInit.Append("", lagGetButton, false)
 
+	//lag create new group and form
 	lagNameNew := ui.NewEntry()
 	lagNameExisting := ui.NewEntry()
 	lagPortsNew := ui.NewEntry()
@@ -853,8 +765,6 @@ func initializeFBTab() ui.Control {
 	lagAddRemove := ui.NewCombobox()
 	lagAddRemove.Append("Add Ports")
 	lagAddRemove.Append("Remove Ports")
-
-	//lag create new group and form
 	lagGroupNew := ui.NewGroup("New LAG Config")
 	lagGroupNew.SetMargined(false)
 	vbox.Append(lagGroupNew, false)
@@ -864,7 +774,7 @@ func initializeFBTab() ui.Control {
 	lagGroupNew.SetChild(lagFormNew)
 	lagFormNew.Append("LAG Name", lagNameNew, false)
 	lagFormNew.Append("Lag Port Name(s)", lagPortsNew, false)
-	lagFormNew.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
+	lagFormNew.Append("", ui.NewLabel("E.g. CH1.FM1.ETH1..."), false)
 	lagPostButton := ui.NewButton("Create New LAG")
 	lagFormNew.Append("", lagPostButton, false)
 
@@ -891,7 +801,7 @@ func initializeFBTab() ui.Control {
 	//lag create delete group and form
 	lagNameDelete := ui.NewEntry()
 	lagDeleteConfirm := ui.NewCheckbox("Yes")
-	lagGroupDelete := ui.NewGroup("New LAG Config")
+	lagGroupDelete := ui.NewGroup("LAG Delete")
 	lagGroupDelete.SetMargined(false)
 	vbox.Append(lagGroupDelete, false)
 	lagGroupDelete.Hide()
@@ -903,20 +813,22 @@ func initializeFBTab() ui.Control {
 	lagDeleteButton := ui.NewButton("Delete LAG")
 	lagFormDelete.Append("", lagDeleteButton, false)
 	//END link aggrigation Form//
+	//END ADVANCED SECTION//
 
 	//subnets Form//
 	subnetGateway := ui.NewEntry()
 	subnetLag := ui.NewEntry()
+	subnetLag.SetText("")
 	subnetMtu := ui.NewEntry()
+	subnetMtu.SetText("1500")
 	subnetPrefix := ui.NewEntry()
 	subnetVlan := ui.NewEntry()
+	subnetVlan.SetText("0")
 	subnetName := ui.NewEntry()
-	subnetInterfaceName := ui.NewEntry()
-	subnetEnabled := ui.NewCombobox()
-	subnetEnabled.Append("true")
-	subnetEnabled.Append("false")
-	subnetServices := ui.NewEntry()
-
+	subnetName.SetText("mgmt")
+	subnetOOB := ui.NewCombobox()
+	subnetOOB.Append("true")
+	subnetOOB.Append("false")
 	subnetGroup := ui.NewGroup("Subnet Config")
 	subnetGroup.SetMargined(false)
 	vbox.Append(subnetGroup, false)
@@ -925,20 +837,15 @@ func initializeFBTab() ui.Control {
 	subnetForm.SetPadded(true)
 	subnetGroup.SetChild(subnetForm)
 	subnetForm.Append("Subnet Name", subnetName, false)
-	subnetForm.Append("Enabled", subnetEnabled, false)
-	subnetForm.Append("Gateway", subnetGateway, false)
-	subnetForm.Append("Interface Name", subnetInterfaceName, false)
-	subnetForm.Append("LAG Name", subnetLag, false)
-	subnetForm.Append("MTU", subnetMtu, false)
-	subnetForm.Append("Prefix", subnetPrefix, false)
+	subnetForm.Append("Gateway IP", subnetGateway, false)
+	subnetForm.Append("Subnet Prefix", subnetPrefix, false)
+	subnetForm.Append("", ui.NewLabel("Prefix e.g. 10.1.1.0/24"), false)
 	subnetForm.Append("VLAN", subnetVlan, false)
-	subnetForm.Append("Services", subnetServices, false)
-
+	subnetForm.Append("Out of Band", subnetOOB, false)
 	subnetGetButton := ui.NewButton("Query")
 	subnetPatchButton := ui.NewButton("Update Existing")
 	subnetPostButton := ui.NewButton("Create New")
 	subnetDeleteButton := ui.NewButton("Delete")
-
 	subnetForm.Append("", subnetPostButton, false)
 	subnetForm.Append("", subnetPatchButton, false)
 	subnetForm.Append("", subnetGetButton, false)
@@ -946,13 +853,9 @@ func initializeFBTab() ui.Control {
 	//end subnets Form//
 
 	//network interfaces Form//
-	nicAddress := ui.NewEntry()
-	nicName := ui.NewEntry()
-	nicStatus := ui.NewEntry()
-	nicStatus.SetText("enabled")
-	nicType := ui.NewEntry()
-	nicType.SetText("vip")
-
+	virIP := ui.NewEntry()
+	fm1AdminIP := ui.NewEntry()
+	fm2AdminIP := ui.NewEntry()
 	nicGroup := ui.NewGroup("Net Interface Config")
 	nicGroup.SetMargined(false)
 	vbox.Append(nicGroup, false)
@@ -960,13 +863,20 @@ func initializeFBTab() ui.Control {
 	nicForm := ui.NewForm()
 	nicForm.SetPadded(true)
 	nicGroup.SetChild(nicForm)
-	nicForm.Append("Interface Name", nicName, false)
-	nicForm.Append("IP Address", nicAddress, false)
-	nicForm.Append("Status", nicStatus, false)
-	nicForm.Append("Type", nicType, false)
+
+	nicForm.Append("", ui.NewLabel("Admin VIR0"), false)
+	nicForm.Append("IP Address", virIP, false)
+
+	nicForm.Append("", ui.NewLabel(""), false)
+	nicForm.Append("", ui.NewLabel("Admin FM1"), false)
+	nicForm.Append("IP Address", fm1AdminIP, false)
+
+	nicForm.Append("", ui.NewLabel(""), false)
+	nicForm.Append("", ui.NewLabel("Admin FM2"), false)
+	nicForm.Append("IP Address", fm2AdminIP, false)
 
 	nicGetButton := ui.NewButton("Query Array")
-	nicPatchButton := ui.NewButton("Update NIC")
+	nicPatchButton := ui.NewButton("Apply NIC Config")
 
 	nicForm.Append("", nicPatchButton, false)
 	nicForm.Append("", nicGetButton, false)
@@ -983,12 +893,10 @@ func initializeFBTab() ui.Control {
 	smtpForm := ui.NewForm()
 	smtpForm.SetPadded(true)
 	smtpGroup.SetChild(smtpForm)
-	smtpForm.Append("Relay Host", smtpRelayHost, false)
 	smtpForm.Append("Sender Domain", smtpSenderDomain, false)
-
+	smtpForm.Append("Relay Host (optional)", smtpRelayHost, false)
 	smtpGetButton := ui.NewButton("Query")
 	smtpPatchButton := ui.NewButton("Create New")
-
 	smtpForm.Append("", smtpPatchButton, false)
 	smtpForm.Append("", smtpGetButton, false)
 	//end smtp Form//
@@ -998,7 +906,6 @@ func initializeFBTab() ui.Control {
 	supportPhoneHome.Append("true")
 	supportPhoneHome.Append("false")
 	supportProxy := ui.NewEntry()
-
 	supportGroup := ui.NewGroup("Support Config")
 	supportGroup.SetMargined(false)
 	vbox.Append(supportGroup, false)
@@ -1006,12 +913,10 @@ func initializeFBTab() ui.Control {
 	supportForm := ui.NewForm()
 	supportForm.SetPadded(true)
 	supportGroup.SetChild(supportForm)
-	supportForm.Append("Enable Phone Home", supportPhoneHome, false)
-	supportForm.Append("Proxy Server", supportProxy, false)
-	supportForm.Append("", ui.NewLabel("*Comma seperated for multiple entries"), false)
+	supportForm.Append("Enable Phone Home?", supportPhoneHome, false)
+	supportForm.Append("Proxy Server (optional)", supportProxy, false)
 	supportGetButton := ui.NewButton("Query Array")
 	supportPatchButton := ui.NewButton("Apply To Array")
-
 	supportForm.Append("", supportPatchButton, false)
 	supportForm.Append("", supportGetButton, false)
 	//end support Form//
@@ -1021,7 +926,6 @@ func initializeFBTab() ui.Control {
 	awEnabled := ui.NewCombobox()
 	awEnabled.Append("true")
 	awEnabled.Append("false")
-
 	awGroup := ui.NewGroup("Alert Watchers Config")
 	awGroup.SetMargined(false)
 	vbox.Append(awGroup, false)
@@ -1031,47 +935,20 @@ func initializeFBTab() ui.Control {
 	awGroup.SetChild(awForm)
 	awForm.Append("Email Address", awName, false)
 	awForm.Append("Enabled", awEnabled, false)
-
 	awGetButton := ui.NewButton("Query")
 	awPatchButton := ui.NewButton("Update Existing")
 	awDeleteButton := ui.NewButton("Delete Alert Watcher")
 	awPostButton := ui.NewButton("New Alert Watcher")
-
 	awForm.Append("", awPostButton, false)
 	awForm.Append("", awPatchButton, false)
 	awForm.Append("", awDeleteButton, false)
 	awForm.Append("", awGetButton, false)
 	//end alert watchers Form//
 
-	//Admins Form//
-	adminName := ui.NewEntry()
-	adminsCreateToken := ui.NewCombobox()
-	adminsCreateToken.Append("true")
-	adminsCreateToken.Append("false")
-
-	adminsGroup := ui.NewGroup("Admins Config")
-	adminsGroup.SetMargined(false)
-	vbox.Append(adminsGroup, false)
-	adminsGroup.Hide()
-	adminsForm := ui.NewForm()
-	adminsForm.SetPadded(true)
-	adminsGroup.SetChild(adminsForm)
-
-	adminsForm.Append("Admin UserName", adminName, false)
-	adminsForm.Append("Create API Token", adminsCreateToken, false)
-
-	adminsGetButton := ui.NewButton("Query Admins")
-	adminsPatchButton := ui.NewButton("Update Admin")
-
-	adminsForm.Append("", adminsPatchButton, false)
-	adminsForm.Append("", adminsGetButton, false)
-	//end admins Form//
-
 	//finalization and validation Form//
 	finalSetupComplete := ui.NewCombobox()
 	finalSetupComplete.Append("true")
 	finalSetupComplete.Append("false")
-
 	finalGroup := ui.NewGroup("Validate and Finalize")
 	finalGroup.SetMargined(false)
 	vbox.Append(finalGroup, false)
@@ -1080,23 +957,22 @@ func initializeFBTab() ui.Control {
 	finalForm.SetPadded(true)
 	finalGroup.SetChild(finalForm)
 	finalForm.Append("Setup Complete", finalSetupComplete, false)
-
 	finalGetButton := ui.NewButton("Validate")
 	finalPatchButton := ui.NewButton("Finalize Setup")
-
 	finalForm.Append("", finalPatchButton, false)
 	finalForm.Append("", finalGetButton, false)
 	//end finalization and validation Form//
 
+	//vertical seperator between 2nd and 3rd column.
 	hbox.Append(ui.NewVerticalSeparator(), false)
 
-	//third column
+	//THIRD COLUMN DEFINITION//
 	vbox = ui.NewVerticalBox()
 	vbox.SetPadded(true)
 	hbox.Append(vbox, true)
 
-	//SUBMIT "GO" BUTTON//
-	group9 := ui.NewGroup("Initialize Array")
+	//Innformation group for output//
+	group9 := ui.NewGroup("Array Information")
 	group9.SetMargined(true)
 	vbox.Append(group9, true)
 
@@ -1108,20 +984,25 @@ func initializeFBTab() ui.Control {
 	xAuthTokenLabel := ui.NewLabel("")
 	apiUrlLabel := ui.NewLabel("")
 	xAuthTokenField.SetReadOnly(true)
+	prog := ui.NewProgressBar()
+	prog.SetValue(0)
 	entryForm9.Append("API URL: ", apiUrlLabel, false)
 	entryForm9.Append("X-Auth-Token", xAuthTokenLabel, false)
+	//progress bar
+	entryForm9.Append("Progress: ", prog, false)
 
 	//multiline field for showing results of patch api call and form validation messages.
 	//sets the initResults console to readonly
 	initResult.SetReadOnly(true)
 	entryForm9.Append("Init Results", initResult, true)
+	initResult.SetText("Welcome to the FlashBlade Zero Touch Provisioner.\n\nThe tool has 3 colunms.  Form Controls, Form Actions, and Information.\nStart with Step 1 on the left and proceed through Step 9 to finish the Array config.\n\nThe progress bar above ^^^ will fill as you proceed through the steps.\n\nFor questions or assistance please reach out to your Pure account team.\n\nThank you! ")
 
 	//Login Form Button
 	login.OnClicked(func(*ui.Button) {
 		loginGroup.Show()
 		arrayGroup.Hide()
 		dnsGroup.Hide()
-		hwcGroup.Hide()
+
 		lagGroupNew.Hide()
 		lagGroupExisting.Hide()
 		lagGroupInit.Hide()
@@ -1131,9 +1012,8 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupDelete.Hide()
-		initResult.SetText("Please fill out the form to obtain an x-auth-token to proceed.")
+		initResult.SetText("Start here and  fill out this form to logon the the Array to proceed.\n\nMore Info:\nThe Array API URL should be in the format of:\nhttps://<FB DHCP IP>/api/<api version>\n\nGenerate URL section:\nYou can enter the DHCP IP of the FB array into the Auto Generate section and the tool will build the API URL in the correct format for you.  You will still need to provide the API Token.")
 
 	})
 
@@ -1142,7 +1022,7 @@ func initializeFBTab() ui.Control {
 		arrayGroup.Show()
 		loginGroup.Hide()
 		dnsGroup.Hide()
-		hwcGroup.Hide()
+
 		lagGroupNew.Hide()
 		lagGroupExisting.Hide()
 		lagGroupInit.Hide()
@@ -1152,9 +1032,8 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupDelete.Hide()
-		initResult.SetText("Query or update array info")
+		initResult.SetText("Step 2.  Provide the name for this Array.  Some rules on that are as follows: The Array Name cannot begin or end with a dash (but CAN contain a dash).  2. the name cannot exceed 55 characters in length.\n\nEnter your NTP Server or Servers.  If you have more than one to enter, plase seperate them by commas with no spaces.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1163,7 +1042,7 @@ func initializeFBTab() ui.Control {
 		dnsGroup.Show()
 		arrayGroup.Hide()
 		loginGroup.Hide()
-		hwcGroup.Hide()
+
 		lagGroupNew.Hide()
 		lagGroupExisting.Hide()
 		lagGroupInit.Hide()
@@ -1173,51 +1052,8 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupDelete.Hide()
-		initResult.SetText("Query or update array info")
-
-	})
-
-	//HWC Form Button
-	hwc.OnClicked(func(*ui.Button) {
-		hwcGroup.Show()
-		dnsGroup.Hide()
-		arrayGroup.Hide()
-		loginGroup.Hide()
-		lagGroupNew.Hide()
-		lagGroupExisting.Hide()
-		lagGroupInit.Hide()
-		finalGroup.Hide()
-		subnetGroup.Hide()
-		nicGroup.Hide()
-		smtpGroup.Hide()
-		supportGroup.Hide()
-		awGroup.Hide()
-		adminsGroup.Hide()
-		lagGroupDelete.Hide()
-		initResult.SetText("Query or update array info")
-
-	})
-
-	//LAG Form Button
-	lag.OnClicked(func(*ui.Button) {
-		lagGroupInit.Show()
-		lagGroupNew.Hide()
-		lagGroupExisting.Hide()
-		hwcGroup.Hide()
-		dnsGroup.Hide()
-		arrayGroup.Hide()
-		loginGroup.Hide()
-		finalGroup.Hide()
-		subnetGroup.Hide()
-		nicGroup.Hide()
-		smtpGroup.Hide()
-		supportGroup.Hide()
-		awGroup.Hide()
-		adminsGroup.Hide()
-		lagGroupDelete.Hide()
-		initResult.SetText("Query or update array info")
+		initResult.SetText("Step 3.  Provide the DNS Domain Name for your environment as well as at least 1 (2 recommended) DNS server.  If you have more than one to enter, plase seperate them by commas with no spaces.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1226,7 +1062,7 @@ func initializeFBTab() ui.Control {
 		lagGroupInit.Show()
 		lagGroupNew.Show()
 		lagGroupExisting.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
@@ -1236,9 +1072,9 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupDelete.Hide()
-		initResult.SetText("Query or update array info")
+
+		initResult.SetText("Advanced Section, Create new LAG.  Provide the new LAG Name and Port Names. If you have more than one to enter, plase seperate them by commas with no spaces.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1247,7 +1083,7 @@ func initializeFBTab() ui.Control {
 		lagGroupInit.Show()
 		lagGroupExisting.Show()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
@@ -1257,9 +1093,9 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupDelete.Hide()
-		initResult.SetText("Query or update array info")
+
+		initResult.SetText("Advanced Section, Update LAG Ports.  You must provide a valid LAG Name the enter the Port Names you wish to change.  Finally select if you want to add or remove these Ports.  If you have more than one to enter, plase seperate them by commas with no spaces.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1269,7 +1105,7 @@ func initializeFBTab() ui.Control {
 		lagGroupInit.Show()
 		lagGroupExisting.Hide()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
@@ -1279,8 +1115,8 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
-		initResult.SetText("Query or update array info")
+
+		initResult.SetText("Advanced Section, Delete LAG.  Provide the exisiting LAG Name to delete.")
 
 	})
 
@@ -1292,15 +1128,15 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupInit.Hide()
 		lagGroupExisting.Hide()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
-		initResult.SetText("Query or update array info")
+		lagGroupDelete.Hide()
+		initResult.SetText("Step 4. Please provide the Gateway IP for this Array as well as the Subnet Prefix in teh format of x.x.x.x/x. e.g. 10.1.1.0/24.\n\nThe Subnet Name and VLAN are pre-populated for you as the most common names.  You can change but make sure you have a reason for doing so.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1312,15 +1148,15 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupInit.Hide()
 		lagGroupExisting.Hide()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
-		initResult.SetText("Query or update array info")
+		lagGroupDelete.Hide()
+		initResult.SetText("Step 5. Provide the individual IP address for the Virtual 0 Nic, FM1 NIC and FM2 NIC.\n\nNote, this step takes 10 -20 seconds to complete.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1332,15 +1168,15 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Show()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupInit.Hide()
 		lagGroupExisting.Hide()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
-		initResult.SetText("Query or update array info")
+		lagGroupDelete.Hide()
+		initResult.SetText("Step 6.  Provide the email domain for your environment.  e.g. example.com.\n\nOptionally, you may provide the SMTP relay host to use for outbound email from the Array.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1352,15 +1188,15 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Show()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupInit.Hide()
 		lagGroupExisting.Hide()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
-		initResult.SetText("Query or update array info")
+		lagGroupDelete.Hide()
+		initResult.SetText("Step 7.  Select whether or not to enable Phone Home for integration with Pure1.  If you are enabling and have a proxy server for outbound connectivity, please enter it as well.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1372,35 +1208,15 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Show()
-		adminsGroup.Hide()
 		lagGroupInit.Hide()
 		lagGroupExisting.Hide()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
-		initResult.SetText("Query or update array info")
-
-	})
-
-	//Admins Form Button
-	admins.OnClicked(func(*ui.Button) {
-		lagGroupInit.Hide()
-		lagGroupExisting.Hide()
-		lagGroupNew.Hide()
-		hwcGroup.Hide()
-		dnsGroup.Hide()
-		arrayGroup.Hide()
-		loginGroup.Hide()
-		finalGroup.Hide()
-		subnetGroup.Hide()
-		nicGroup.Hide()
-		smtpGroup.Hide()
-		supportGroup.Hide()
-		awGroup.Hide()
-		adminsGroup.Show()
-		initResult.SetText("Query or update array info")
+		lagGroupDelete.Hide()
+		initResult.SetText("Step 8. Provide a valid email address will recieve all alerts generated by the Array.  Please enter one email addresse at a time.\n\nIf needed you can modify or delete email address.\n\nYou can also Query the array before and after to see the status of this section.")
 
 	})
 
@@ -1412,33 +1228,56 @@ func initializeFBTab() ui.Control {
 		smtpGroup.Hide()
 		supportGroup.Hide()
 		awGroup.Hide()
-		adminsGroup.Hide()
 		lagGroupInit.Hide()
 		lagGroupExisting.Hide()
 		lagGroupNew.Hide()
-		hwcGroup.Hide()
+
 		dnsGroup.Hide()
 		arrayGroup.Hide()
 		loginGroup.Hide()
-		initResult.SetText("Query or update array info")
+		lagGroupDelete.Hide()
+		initResult.SetText("Final Step.  When all previous steps are complete you can Validate and then Finalize the Config.\n\nValidate should return 'true' in the response.\n\nOnce Finalized you will no longer be able to access the array using this tool and just simply exit using the X at the top right.")
+
+	})
+
+	//Advanced Form Button
+	advanced.OnClicked(func(*ui.Button) {
+		lagGroupInit.Show()
+
+		finalGroup.Hide()
+		subnetGroup.Hide()
+		nicGroup.Hide()
+		smtpGroup.Hide()
+		supportGroup.Hide()
+		awGroup.Hide()
+		lagGroupExisting.Hide()
+		lagGroupNew.Hide()
+
+		dnsGroup.Hide()
+		arrayGroup.Hide()
+		loginGroup.Hide()
+		lagGroupDelete.Hide()
+		initResult.SetText("LAG Config. Use only with assistnace of Pure Storage Support.")
 
 	})
 
 	//Buttons Actions from Forms//
-
 	//QUERY FOR API VERSIONS//
 	getAPIVersionsButton.OnClicked(func(*ui.Button) {
 		//make sure the api endpoints are in the right format
 		passed := true
+		//Validate inputs
 		validate := validator.New()
 		err := validate.Var(managementIP.Text(), "required,ipv4")
 		if err != nil {
 			initResult.SetText("Please provide a valid IP Address for the FB management endpoint")
 			passed = false
+
 		}
+		//if passed validation
 		if passed == true {
 			//make the rest call
-			resp := getAPICallFB("https://"+managementIP.Text()+"/api/api_version", apiToken.Text())
+			resp := apiCallFB("GET", "https://"+managementIP.Text()+"/api/api_version", apiToken.Text(), nil)
 
 			type Version struct {
 				Versions []string `json:"versions"`
@@ -1463,9 +1302,10 @@ func initializeFBTab() ui.Control {
 
 	//LOGIN SUBMIT//
 	loginSubmitButton.OnClicked(func(*ui.Button) {
+		//returns a slice broken out by forward slash in the url
+		url := strings.Split(apiUrlForm.Text(), "/")
 		//make sure the api endpoints are in the right format
 		passed := true
-		url := urlParser(apiUrlForm.Text())
 		if len(url) > 4 {
 			loginUrl = (url[0] + "//" + url[2] + "/" + url[3])
 			apiUrl = (url[0] + "//" + url[2] + "/" + url[3] + "/" + url[4])
@@ -1479,34 +1319,61 @@ func initializeFBTab() ui.Control {
 
 			//make the rest call
 			resp := postAPICallLoginFB(loginUrl+"/login", apiToken.Text())
-			//set the response in the display of the app
-			initResult.SetText(string(resp))
+
 			xAuthTokenField.SetText(xAuthToken)
 			xAuthTokenLabel.SetText(xAuthToken)
-		}
 
+			//check if the post was a success
+			if statusCode == 200 {
+				//used for progress bar
+				if t, found := steps[1]; found {
+					fmt.Println("step ", t, " already completed not changing progress bar.")
+				} else {
+					steps[1] = "complete"
+					progressCounter = progressCounter + 10
+					prog.SetValue(progressCounter)
+				}
+				//set the response in the display of the app
+				initResult.SetText(string(resp) + "\n\nLogon Successful!\n\nPlease proceed to the Array form.")
+			}
+		}
 	})
 
+	//action for array Get button to make api call
 	arrayGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/arrays", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/arrays", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
+	//action for array Apply button to make api call
 	arrayPatchButton.OnClicked(func(*ui.Button) {
 		//form validation object instantiation
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
-		err1 := validate.Var(ntpServer.Text(), "required")
-		if err1 != nil {
-			initResult.SetText("Please provide the Ntp server(s)")
-			passed = false
-		}
 		//validate Array Name
 		var rxPat = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,54}[a-zA-Z0-9])?$`)
 		if !rxPat.MatchString(arrayName.Text()) {
 			initResult.SetText("Array Name has blank or contains invalid characters.  It must begin with a number or letter, can contain a dash in the body of the name, but must also end with a number or letter.   No more than 55 characters in length.")
+			passed = false
+		}
+		//validate ntp server or servers
+		err1 := validate.Var(ntpServer.Text(), "required")
+		if err1 != nil {
+			initResult.SetText("Please provide the NTP server(s)")
+			passed = false
+		}
+		ntp := strings.Split(ntpServer.Text(), ",")
+		for i := 0; i < len(ntp); i++ {
+			//fmt.Print(ntp[i] + "\n")
+			err2 := validate.Var(ntp[i], "fqdn|ip")
+			if err2 != nil {
+				initResult.SetText("Please provide a fqdn or ip for the NTP server.\n\nIf more than one server is entered please use comma seperation with no spaces in-between.")
+				passed = false
+			}
+		}
+		if timeZone.Selected() < 0 {
+			initResult.SetText("Please select a Timezone")
 			passed = false
 		}
 		if passed == true {
@@ -1514,16 +1381,14 @@ func initializeFBTab() ui.Control {
 			type FAB struct {
 				Name      string   `json:"name"`
 				NtpServer []string `json:"ntp_servers"`
+				TimeZone  string   `json:"time_zone"`
 			}
-
-			//slices for multiple entry fields
-			//split string into slice(array) *need to add conditional here
-			ntp := strings.Split(ntpServer.Text(), ",")
 
 			//initialize FAS struct object
 			FB := &FAB{}
 			FB.Name = arrayName.Text()
 			FB.NtpServer = ntp
+			FB.TimeZone = tz[timeZone.Selected()]
 
 			//marshal (json encode) the map into a json string
 			FBData, err := json.Marshal(FB)
@@ -1531,14 +1396,41 @@ func initializeFBTab() ui.Control {
 				fmt.Println(err.Error())
 				return
 			}
+			//send patch request to array
+			result := apiCallFB("PATCH", apiUrl+"/arrays", xAuthToken, FBData)
 
-			result := patchAPICallFB(apiUrl+"/arrays", xAuthToken, FBData)
-			initResult.SetText(result)
+			//check if request was successful (code 200)
+			if statusCode == 200 {
+				//decode the response from a successfull call to a map interface//
+				var r map[string]interface{}
+				json.Unmarshal([]byte(result), &r)
+				name, d, o, err := jsonparser.Get(result, "name")
+				fmt.Print("jsonparser out: ", d, o, err)
+				ntpservers, d, o, err := jsonparser.Get(result, "ntp_servers")
+				fmt.Print("jsonparser out: ", d, o, err)
+				timezone, d, o, err := jsonparser.Get(result, "time_zone")
+				fmt.Print("jsonparser out: ", d, o, err)
+				fmt.Print(string(name))
+				initResult.SetText("Success!\n\nApplied the following:\n\nName: " + string(name) + "\nNTP Servers: " + string(ntpservers) + "\nTimeZone: " + string(timezone) + "\n\nPlease proceed to the DNS form.")
+
+				//used for the progress bar
+				//check if post was success and if this step has previously been completed.
+				if t, found := steps[2]; found {
+					fmt.Println("step ", t, ", already completed not changing progress bar.")
+				} else {
+					steps[2] = "complete"
+					progressCounter = progressCounter + 10
+					prog.SetValue(progressCounter)
+				}
+			} else {
+				initResult.SetText(string(result))
+			}
+
 		}
 	})
 
 	dnsGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/dns", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/dns", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
@@ -1547,15 +1439,25 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
-		err2 := validate.Var(dnsServer.Text(), "required")
-		if err2 != nil {
-			initResult.SetText("Please provide the dns server(s)")
+		//validate DNS server entries
+		err := validate.Var(dnsServer.Text(), "required")
+		if err != nil {
+			initResult.SetText("Please provide the DNS Server(s)")
 			passed = false
 		}
-		err1 := validate.Var(dnsDomain.Text(), "required")
-		if err1 != nil {
-			initResult.SetText("Please provide the dns domain")
+		//split multiple entries into a string array
+		dns := strings.Split(dnsServer.Text(), ",")
+		for i := 0; i < len(dns); i++ {
+			err1 := validate.Var(dns[i], "fqdn|ip")
+			if err1 != nil {
+				initResult.SetText("Please provide a fqdn or ip for the DNS server.\n\nIf more than one server is entered please use comma seperation with no spaces in-between.")
+				passed = false
+			}
+		}
+		//validate dns domain
+		err2 := validate.Var(dnsDomain.Text(), "fqdn")
+		if err2 != nil {
+			initResult.SetText("Please provide the DNS Domain")
 			passed = false
 		}
 		if passed == true {
@@ -1565,10 +1467,6 @@ func initializeFBTab() ui.Control {
 				Domain      string   `json:"domain"`
 				Nameservers []string `json:"nameservers"`
 			}
-
-			//slices for multiple entry fields
-			//split string into slice(array) *need to add conditional here
-			dns := strings.Split(dnsServer.Text(), ",")
 
 			//initialize FAS struct object
 			FB := &FAB{}
@@ -1581,70 +1479,40 @@ func initializeFBTab() ui.Control {
 				fmt.Println(err.Error())
 				return
 			}
+			//make the Patch rest api call to the array
+			result := apiCallFB("PATCH", apiUrl+"/dns", xAuthToken, FBData)
+			//check if success to provide results
+			if statusCode == 200 {
+				//decode the response from a successfull call to a map interface//
+				var r map[string]interface{}
+				json.Unmarshal([]byte(result), &r)
+				domain, d, o, err := jsonparser.Get(result, "domain")
+				fmt.Print("jsonparser out: ", d, o, err)
+				nameservers, d, o, err := jsonparser.Get(result, "nameservers")
+				fmt.Print("jsonparser out: ", d, o, err)
+				//print results to output field
+				initResult.SetText("Success!\n\nApplied the following:\n\nDomain: " + string(domain) + "\nName Servers: " + string(nameservers) + "\n\nPlease proceed to the Subnets Form.")
 
-			result := patchAPICallFB(apiUrl+"/dns", xAuthToken, FBData)
-			initResult.SetText(result)
-		}
-	})
+				//used for the progress bar
+				//check if post was success and if this step has previously been completed.
+				if t, found := steps[3]; found {
+					fmt.Println("step ", t, ", already completed not changing progress bar.")
+				} else {
+					steps[2] = "complete"
+					progressCounter = progressCounter + 10
+					prog.SetValue(progressCounter)
+				}
 
-	//HWC Buttons
-	hwcGetButton.OnClicked(func(*ui.Button) {
-		//form validation object instantiation
-		var passed bool = true
-		validate := validator.New()
-
-		//validate ntp servers
-		err2 := validate.Var(hwcName.Text(), "required")
-		if err2 != nil {
-			initResult.SetText("Please provide a Hardware Connector name to query for")
-			passed = false
-		}
-		if passed {
-			result := getAPICallFB(apiUrl+"/hardware-connectors?names="+hwcName.Text(), xAuthToken)
-			initResult.SetText(string(result))
-		}
-	})
-
-	hwcPatchButton.OnClicked(func(*ui.Button) {
-		//form validation object instantiation
-		var passed bool = true
-		validate := validator.New()
-
-		//validate ntp servers
-		err2 := validate.Var(hwcName.Text(), "required")
-		if err2 != nil {
-			initResult.SetText("Please provide the Array name")
-			passed = false
-		}
-
-		if passed == true {
-
-			//struct here
-			type FAB struct {
-				Lanespeed string `json:"lane_speed"`
-				Portcount string `json:"port_count"`
+			} else {
+				initResult.SetText("name: " + string(result))
 			}
-
-			//initialize FAS struct object
-			FB := &FAB{}
-			FB.Lanespeed = hwcLaneSpeed.Text()
-			FB.Portcount = hwcPortCount.Text()
-
-			//marshal (json encode) the map into a json string
-			FBData, err := json.Marshal(FB)
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-
-			result := patchAPICallFB(apiUrl+"/hardware-connectors?names="+hwcName.Text(), xAuthToken, FBData)
-			initResult.SetText(result)
 		}
 	})
+
 	//Lag Buttons
 	lagGetButton.OnClicked(func(*ui.Button) {
 
-		result := getAPICallFB(apiUrl+"/link-aggregation-groups", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/link-aggregation-groups", xAuthToken, nil)
 		initResult.SetText(string(result))
 
 	})
@@ -1654,7 +1522,7 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
+		//validate lag port and  server name
 		err2 := validate.Var(lagNameNew.Text(), "required")
 		if err2 != nil {
 			initResult.SetText("Please provide the Array name")
@@ -1666,8 +1534,10 @@ func initializeFBTab() ui.Control {
 			passed = false
 		}
 
+		//if validation passed
 		if passed == true {
-			//this was tricky and probably not the best way to accompish this but it works.
+
+			//manually build the post request
 			portNames := strings.Split(lagPortsNew.Text(), ",")
 			var pName = `{"ports": [`
 			for i, v := range portNames {
@@ -1682,8 +1552,8 @@ func initializeFBTab() ui.Control {
 			pName += `]}`
 			pNameSlice := []byte(pName)
 
-			result := postAPICall2FB(apiUrl+"/link-aggregation-groups?names="+lagNameNew.Text(), xAuthToken, pNameSlice)
-			initResult.SetText(result)
+			result := apiCallFB("POST", apiUrl+"/link-aggregation-groups?names="+lagNameNew.Text(), xAuthToken, pNameSlice)
+			initResult.SetText(string(result))
 		}
 	})
 
@@ -1692,7 +1562,7 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
+		//validate
 		err2 := validate.Var(lagNameExisting.Text(), "required")
 		if err2 != nil {
 			initResult.SetText("Please provide the Array name")
@@ -1701,7 +1571,7 @@ func initializeFBTab() ui.Control {
 
 		if passed == true {
 
-			//this was tricky and probably not the best way to accompish this but it works.
+			//manually build the portNames JSON structure.
 			portNames := strings.Split(lagPortsExisting.Text(), ",")
 			var pName = ""
 			if lagAddRemove.Selected() == 0 {
@@ -1722,20 +1592,20 @@ func initializeFBTab() ui.Control {
 			pName += `]}`
 			pNameSlice := []byte(pName)
 
-			result := patchAPICallFB(apiUrl+"/link-aggregation-groups?names="+lagNameExisting.Text(), xAuthToken, pNameSlice)
-			initResult.SetText(result)
+			result := apiCallFB("PATCH", apiUrl+"/link-aggregation-groups?names="+lagNameExisting.Text(), xAuthToken, pNameSlice)
+			initResult.SetText(string(result))
 		}
 	})
 
 	lagDeleteButton.OnClicked(func(*ui.Button) {
 
-		result := deleteAPICallFB(apiUrl+"/link-aggregation-groups?names="+lagNameDelete.Text(), xAuthToken)
-		initResult.SetText(result)
+		result := apiCallFB("DELETE", apiUrl+"/link-aggregation-groups?names="+lagNameDelete.Text(), xAuthToken, nil)
+		initResult.SetText(string(result))
 
 	})
 
 	subnetGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/subnets", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/subnets", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
@@ -1744,13 +1614,18 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
-		err2 := validate.Var(subnetGateway.Text(), "required")
-		if err2 != nil {
-			initResult.SetText("Please provide the gateway")
+		//validate
+		err1 := validate.Var(subnetVlan.Text(), "numeric,min=1")
+		if err1 != nil {
+			initResult.SetText("Please provide a valid vlanID")
 			passed = false
 		}
-		err4 := validate.Var(subnetPrefix.Text(), "required")
+		err2 := validate.Var(subnetGateway.Text(), "ip")
+		if err2 != nil {
+			initResult.SetText("Please provide a valid gateway IP")
+			passed = false
+		}
+		err4 := validate.Var(subnetPrefix.Text(), "cidr")
 		if err4 != nil {
 			initResult.SetText("Please provide the Prefix")
 			passed = false
@@ -1760,45 +1635,39 @@ func initializeFBTab() ui.Control {
 			initResult.SetText("Please provide the Subnet Name")
 			passed = false
 		}
+		if subnetOOB.Selected() < 0 {
+			initResult.SetText("Please select true or false for Out of Band")
+			passed = false
+		}
 
 		if passed == true {
 
 			type FAB struct {
-				Enabled    bool   `json:"enabled"`
-				Gateway    string `json:"gateway"`
-				Interfaces struct {
-					Name string `json:"name"`
-				} `json:"interfaces"`
-				LinkAggregationGroup struct {
-					Name string `json:"link_aggregation_group"`
-				} `json:"link_aggregation_group"`
-				Mtu      int      `json:"mtu"`
-				Prefix   string   `json:"prefix"`
-				Services []string `json:"services"`
-				Vlan     int      `json:"vlan"`
+				Gateway string `json:"gateway"`
+				Mtu     int    `json:"mtu"`
+				Prefix  string `json:"prefix"`
+				Vlan    int    `json:"vlan"`
+				OOB     bool   `json:"out_of_band"`
 			}
 
-			//slices for multiple entry fields
-			//split string into slice(array) *need to add conditional here
-			svc := strings.Split(subnetServices.Text(), ",")
-			var isEnabled bool
-			if subnetEnabled.Selected() == 0 {
-				isEnabled = true
+			//set out of band value for post request
+			var OOB bool
+			if subnetOOB.Selected() == 0 {
+				OOB = true
 			}
-			if subnetEnabled.Selected() == 1 {
-				isEnabled = false
+			if subnetOOB.Selected() == 1 {
+				OOB = false
 			}
-			mtuInt, err := strconv.Atoi(subnetMtu.Text())
+
+			//convert the vlan entry from string to int.
 			vlanInt, err := strconv.Atoi(subnetVlan.Text())
+
 			//initialize FAS struct object
 			FB := &FAB{}
-			FB.Enabled = isEnabled
+			FB.OOB = OOB
 			FB.Gateway = subnetGateway.Text()
-			FB.Interfaces.Name = subnetInterfaceName.Text()
-			FB.LinkAggregationGroup.Name = subnetLag.Text()
-			FB.Mtu = mtuInt
+			FB.Mtu = 1500
 			FB.Prefix = subnetPrefix.Text()
-			FB.Services = svc
 			FB.Vlan = vlanInt
 
 			//marshal (json encode) the map into a json string
@@ -1808,8 +1677,32 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := postAPICall2FB(apiUrl+"/subnets?names="+subnetName.Text(), xAuthToken, FBData)
-			initResult.SetText(result)
+			result := apiCallFB("POST", apiUrl+"/subnets?names="+subnetName.Text(), xAuthToken, FBData)
+			if statusCode == 200 {
+				//decode the response from a successfull call to a map interface//
+				var r map[string]interface{}
+				json.Unmarshal([]byte(result), &r)
+				name, d, o, err := jsonparser.Get(result, "items", "[0]", "name")
+				fmt.Print("jsonparser out: ", d, o, err)
+				gateway, d, o, err := jsonparser.Get(result, "items", "[0]", "gateway")
+				prefix, d, o, err := jsonparser.Get(result, "items", "[0]", "prefix")
+				vlan, d, o, err := jsonparser.Get(result, "items", "[0]", "vlan")
+				fmt.Print("jsonparser out: ", d, o, err)
+
+				//print results to output field
+				initResult.SetText("Success!\n\nApplied the following:\n\nSubnetName: " + string(name) + "\nGateway: " + string(gateway) + "\nPrefix: " + string(prefix) + "\nVLAN: " + string(vlan) + "\n\nPlease Proceed to the NIC Form")
+
+				//used for the progress bar to check if this step has previously been completed.
+				if t, found := steps[4]; found {
+					fmt.Println("step ", t, ", already completed not changing progress bar.")
+				} else {
+					steps[4] = "complete"
+					progressCounter = progressCounter + 10
+					prog.SetValue(progressCounter)
+				}
+			} else {
+				initResult.SetText(string(result))
+			}
 		}
 	})
 
@@ -1818,10 +1711,15 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
-		err2 := validate.Var(subnetGateway.Text(), "required")
+		//validate entries
+		err1 := validate.Var(subnetVlan.Text(), "numeric,min=1")
+		if err1 != nil {
+			initResult.SetText("Please provide a valid vlanID")
+			passed = false
+		}
+		err2 := validate.Var(subnetGateway.Text(), "ip")
 		if err2 != nil {
-			initResult.SetText("Please provide the gateway")
+			initResult.SetText("Please provide a valid gateway IP")
 			passed = false
 		}
 		err4 := validate.Var(subnetPrefix.Text(), "required")
@@ -1834,45 +1732,39 @@ func initializeFBTab() ui.Control {
 			initResult.SetText("Please provide the Subnet Name")
 			passed = false
 		}
+		if subnetOOB.Selected() < 0 {
+			initResult.SetText("Please select true or false for Out of Band")
+			passed = false
+		}
 
 		if passed == true {
 
+			//defin struct
 			type FAB struct {
-				Enabled    bool   `json:"enabled"`
-				Gateway    string `json:"gateway"`
-				Interfaces struct {
-					Name string `json:"name"`
-				} `json:"interfaces"`
-				LinkAggregationGroup struct {
-					Name string `json:"name"`
-				} `json:"link_aggregation_group"`
-				Mtu      int      `json:"mtu"`
-				Prefix   string   `json:"prefix"`
-				Services []string `json:"services"`
-				Vlan     int      `json:"vlan"`
+				Gateway string `json:"gateway"`
+				Mtu     int    `json:"mtu"`
+				Prefix  string `json:"prefix"`
+				Vlan    int    `json:"vlan"`
+				OOB     bool   `json:"out_of_band"`
 			}
 
-			//slices for multiple entry fields
-			//split string into slice(array) *need to add conditional here
-			svc := strings.Split(subnetServices.Text(), ",")
-			var isEnabled bool
-			if subnetEnabled.Selected() == 0 {
-				isEnabled = true
+			//assign out of band values for api call.
+			var OOB bool
+			if subnetOOB.Selected() == 0 {
+				OOB = true
 			}
-			if subnetEnabled.Selected() == 1 {
-				isEnabled = false
+			if subnetOOB.Selected() == 1 {
+				OOB = false
 			}
-			mtuInt, err := strconv.Atoi(subnetMtu.Text())
+			//convert the vlan entry from string to Int
 			vlanInt, err := strconv.Atoi(subnetVlan.Text())
 			//initialize FAS struct object
 			FB := &FAB{}
-			FB.Enabled = isEnabled
+			FB.OOB = OOB
 			FB.Gateway = subnetGateway.Text()
-			FB.Interfaces.Name = subnetInterfaceName.Text()
-			FB.LinkAggregationGroup.Name = subnetLag.Text()
-			FB.Mtu = mtuInt
+			FB.Mtu = 1500
 			FB.Prefix = subnetPrefix.Text()
-			FB.Services = svc
+			//FB.Services = svc
 			FB.Vlan = vlanInt
 
 			//marshal (json encode) the map into a json string
@@ -1882,8 +1774,9 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := patchAPICallFB(apiUrl+"/subnets?names="+subnetName.Text(), xAuthToken, FBData)
-			initResult.SetText(result)
+			//make the patch request
+			result := apiCallFB("PATCH", apiUrl+"/subnets?names="+subnetName.Text(), xAuthToken, FBData)
+			initResult.SetText(string(result))
 		}
 	})
 
@@ -1898,40 +1791,36 @@ func initializeFBTab() ui.Control {
 			passed = false
 		}
 		if passed == true {
-			result := deleteAPICallFB(apiUrl+"/subnets?names="+subnetName.Text(), xAuthToken)
-			initResult.SetText(result)
+			result := apiCallFB("DELETE", apiUrl+"/subnets?names="+subnetName.Text(), xAuthToken, nil)
+			initResult.SetText(string(result))
 		}
 	})
 
 	nicGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/network-interfaces", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/network-interfaces", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
 	nicPatchButton.OnClicked(func(*ui.Button) {
+		initResult.SetText("processing vir0...")
 		//form validation object instantiation
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
-		err2 := validate.Var(nicName.Text(), "required")
+		//validate
+		err := validate.Var(virIP.Text(), "ip")
+		if err != nil {
+			initResult.SetText("Please provide a valid IP for VIR")
+			passed = false
+		}
+		err1 := validate.Var(fm1AdminIP.Text(), "ip")
+		if err1 != nil {
+			initResult.SetText("Please provide a valid IP for FM1")
+			passed = false
+		}
+		err2 := validate.Var(fm2AdminIP.Text(), "ip")
 		if err2 != nil {
-			initResult.SetText("Please provide the Name")
-			passed = false
-		}
-		err4 := validate.Var(nicAddress.Text(), "required")
-		if err4 != nil {
-			initResult.SetText("Please provide the IP")
-			passed = false
-		}
-		err5 := validate.Var(nicType.Text(), "required")
-		if err5 != nil {
-			initResult.SetText("Please provide the Type")
-			passed = false
-		}
-		err6 := validate.Var(nicStatus.Text(), "required")
-		if err6 != nil {
-			initResult.SetText("Please provide the Status")
+			initResult.SetText("Please provide a valid IP for FM2")
 			passed = false
 		}
 
@@ -1939,15 +1828,11 @@ func initializeFBTab() ui.Control {
 
 			type FAB struct {
 				Address string `json:"address"`
-				Type    string `json:"type"`
-				Status  string `json:"status"`
 			}
 
 			//initialize FAS struct object
 			FB := &FAB{}
-			FB.Address = nicAddress.Text()
-			FB.Type = nicType.Text()
-			FB.Status = nicStatus.Text()
+			FB.Address = virIP.Text()
 
 			//marshal (json encode) the map into a json string
 			FBData, err := json.Marshal(FB)
@@ -1956,13 +1841,87 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := patchAPICallFB(apiUrl+"/network-interfaces?names="+nicName.Text(), xAuthToken, FBData)
-			initResult.SetText(result)
+			//initialize FAS struct object
+			FB1 := &FAB{}
+			FB1.Address = fm1AdminIP.Text()
+
+			//marshal (json encode) the map into a json string
+			FBData1, err := json.Marshal(FB1)
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+
+			//initialize FAS struct object
+			FB2 := &FAB{}
+			FB2.Address = fm2AdminIP.Text()
+
+			//marshal (json encode) the map into a json string
+			FBData2, err := json.Marshal(FB2)
+			if err != nil {
+				fmt.Println(err.Error())
+				return
+			}
+
+			//variables for the PATCH request to apply NIC IP's fro VIR0, FM1, and FM2
+			var r map[string]interface{}
+			var vir0Status, fm1Status, fm2Status int
+			var vir0Result, fm1Result, fm2Result string
+			//poor mans async call.
+			//start with VIR0 IP PATCH to Array, then check status.
+			result0 := apiCallFB("PATCH", apiUrl+"/network-interfaces?names=vir0", xAuthToken, FBData)
+			time.Sleep(time.Second * 3)
+			vir0Status = statusCode
+			if vir0Status == 200 {
+				json.Unmarshal([]byte(result0), &r)
+				vir0, d, o, err := jsonparser.Get(result0, "items", "[0]", "address")
+				fmt.Print(d, o, err)
+				vir0Result = "Successfully Applied the Vir0 Address: " + string(vir0)
+			} else {
+				vir0Result = "Failed. Something went wrong with the Vir0 Address. \n\nStatus code: " + string(vir0Status) + "\n\nresponse: " + string(result0)
+			}
+			//FM1 IP PATCH to Array, then check status.
+			result1 := apiCallFB("PATCH", apiUrl+"/network-interfaces?names=fm1.admin0", xAuthToken, FBData1)
+			time.Sleep(time.Second * 3)
+			fm1Status = statusCode
+			if fm1Status == 200 {
+				json.Unmarshal([]byte(result1), &r)
+				FM1, d, o, err := jsonparser.Get(result1, "items", "[0]", "address")
+				fmt.Print(d, o, err)
+				fm1Result = "\n\nSuccessfully Applied the FM1 Address: " + string(FM1)
+			} else {
+				fm1Result = "\n\nFailed. Something went wrong with the FM1 Address. \n\nStatus code: " + string(fm1Status) + "\n\nresponse: " + string(result1)
+			}
+			//FM2 IP PATCH to array then check status
+			result2 := apiCallFB("PATCH", apiUrl+"/network-interfaces?names=fm2.admin0", xAuthToken, FBData2)
+			time.Sleep(time.Second * 3)
+			fm2Status = statusCode
+			if fm2Status == 200 {
+				json.Unmarshal([]byte(result2), &r)
+				FM2, d, o, err := jsonparser.Get(result2, "items", "[0]", "address")
+				fm2Result = "\n\nSuccessfully Applied the FM2 Address: " + string(FM2)
+				fmt.Print(d, o, err)
+			} else {
+				fm2Result = "\n\nFailed. Something went wrong with the FM2 Addreess. \n\nStatus code: " + string(fm2Status) + "\n\nResponse: " + string(result2)
+			}
+
+			if vir0Status == 200 && fm1Status == 200 && fm2Status == 200 {
+				if t, found := steps[5]; found {
+					fmt.Println("step ", t, ", already completed not changing progress bar.")
+				} else {
+					steps[4] = "complete"
+					progressCounter = progressCounter + 30
+					prog.SetValue(progressCounter)
+				}
+				initResult.SetText(vir0Result + fm1Result + fm2Result + "\n\nPlease proceed to the SMTP Form.")
+			} else {
+				initResult.SetText(vir0Result + fm1Result + fm2Result)
+			}
 		}
 	})
 
 	smtpGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/smtp", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/smtp", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
@@ -1971,18 +1930,23 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
-		err2 := validate.Var(smtpRelayHost.Text(), "required")
-		if err2 != nil {
-			initResult.SetText("Please provide the SMTP Relay Host Name")
+		//validate
+		//validate smtp domain is fqdn
+		err1 := validate.Var(smtpSenderDomain.Text(), "fqdn")
+		if err1 != nil {
+			initResult.SetText("Please provide a sender domain as a fully qualified domain name.")
 			passed = false
 		}
-		err4 := validate.Var(smtpSenderDomain.Text(), "required")
-		if err4 != nil {
-			initResult.SetText("Please provide the sender domain")
-			passed = false
+		//if relay is set validate format
+		if smtpRelayHost.Text() != "" {
+			err := validate.Var(smtpRelayHost.Text(), "fqdn|ip|url")
+			if err != nil {
+				initResult.SetText("Please provide a valid IP, URL, or FQDN for the relay host")
+				passed = false
+			}
 		}
 
+		//if validation passes, continue
 		if passed == true {
 
 			type FAB struct {
@@ -1990,7 +1954,7 @@ func initializeFBTab() ui.Control {
 				Domain string `json:"sender_domain"`
 			}
 
-			//initialize FAS struct object
+			//initialize FB struct object
 			FB := &FAB{}
 			FB.Relay = smtpRelayHost.Text()
 			FB.Domain = smtpSenderDomain.Text()
@@ -2002,13 +1966,35 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := patchAPICallFB(apiUrl+"/smtp", xAuthToken, FBData)
-			initResult.SetText(result)
+			//make the rest call to the array api
+			result := apiCallFB("PATCH", apiUrl+"/smtp", xAuthToken, FBData)
+			//check for a successful Patch request
+			if statusCode == 200 {
+				//decode the response from a successfull call to a map interface//
+				var r map[string]interface{}
+				json.Unmarshal([]byte(result), &r)
+				senderDomain, d, o, err := jsonparser.Get(result, "items", "[0]", "sender_domain")
+				fmt.Print("jsonparser out: ", d, o, err)
+				relay, d, o, err := jsonparser.Get(result, "items", "[0]", "relay_host")
+				fmt.Print("jsonparser out: ", d, o, err)
+				//print results to output field
+				initResult.SetText("Success!\n\nApplied the following:\n\nSender Domain: " + string(senderDomain) + "\nRelay Host: " + string(relay) + "\n\nPlease proceed to the Support Form")
+				//used for the progress bar
+				if t, found := steps[6]; found {
+					fmt.Println("step ", t, ", already completed not changing progress bar.")
+				} else {
+					steps[6] = "complete"
+					progressCounter = progressCounter + 10
+					prog.SetValue(progressCounter)
+				}
+			} else {
+				initResult.SetText("Error: " + string(result))
+			}
 		}
 	})
 
 	supportGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/support", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/support", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
@@ -2017,29 +2003,32 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
-		err4 := validate.Var(supportProxy.Text(), "required")
-		if err4 != nil {
-			initResult.SetText("Please provide the proxy server")
-			passed = false
-		}
+		//validate
 		if supportPhoneHome.Selected() == -1 {
-			initResult.SetText("Please provide select true or false for phone home")
+			initResult.SetText("Please select true or false for Phone Home")
 			passed = false
 		}
-
-		var phoneHome = ""
+		//set phonehome value for api call
+		var phoneHome = false
 		if supportPhoneHome.Selected() == 0 {
-			phoneHome = "true"
+			phoneHome = true
 		}
 		if supportPhoneHome.Selected() == 1 {
-			phoneHome = "false"
+			phoneHome = false
+		}
+		//if proxy is set validate format
+		if supportProxy.Text() != "" {
+			err := validate.Var(supportProxy.Text(), "fqdn|ip|url")
+			if err != nil {
+				initResult.SetText("Please provide a valid IP, URL or FQDN for the proxy server")
+				passed = false
+			}
 		}
 
 		if passed == true {
 
 			type FAB struct {
-				Phonehome string `json:"phonehome_enabled"`
+				Phonehome bool   `json:"phonehome_enabled"`
 				Proxy     string `json:"proxy"`
 			}
 
@@ -2055,13 +2044,36 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := patchAPICallFB(apiUrl+"/support", xAuthToken, FBData)
-			initResult.SetText(result)
+			result := apiCallFB("PATCH", apiUrl+"/support", xAuthToken, FBData)
+			fmt.Print(string(result) + "\n")
+			fmt.Print(statusCode)
+
+			if statusCode == 200 {
+				//decode the response from a successfull call to a map interface//
+				var r map[string]interface{}
+				json.Unmarshal([]byte(result), &r)
+				phoneHomeEnabled, d, o, err := jsonparser.Get(result, "items", "[0]", "phonehome_enabled")
+				fmt.Print("jsonparser out: ", d, o, err)
+				proxy, d, o, err := jsonparser.Get(result, "items", "[0]", "proxy")
+				fmt.Print("jsonparser out: ", d, o, err)
+				//print results to output field
+				initResult.SetText("Success!\n\nApplied the following:\n\nPhone Home Enabled: " + string(phoneHomeEnabled) + "\nProxy Server: " + string(proxy) + "\n\nPlease proceed to the Alerts Form")
+				//used for the progress bar
+				if t, found := steps[7]; found {
+					fmt.Println("step ", t, ", already completed not changing progress bar.")
+				} else {
+					steps[7] = "complete"
+					progressCounter = progressCounter + 10
+					prog.SetValue(progressCounter)
+				}
+			} else {
+				initResult.SetText("Error: " + string(result))
+			}
 		}
 	})
 
 	awGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/alert-watchers", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/alert-watchers", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
@@ -2070,14 +2082,14 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
+		//validate
 		err2 := validate.Var(awName.Text(), "email")
 		if err2 != nil {
 			initResult.SetText("Please provide an email address")
 			passed = false
 		}
 		if awEnabled.Selected() == -1 {
-			initResult.SetText("Please provide select true or false for enabled")
+			initResult.SetText("Please select true or false for enabled")
 			passed = false
 		}
 
@@ -2106,8 +2118,22 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := patchAPICallFB(apiUrl+"/alert-watchers?names="+awName.Text(), xAuthToken, FBData)
-			initResult.SetText(result)
+			//make the patch rest call to the array api
+			result := apiCallFB("PATCH", apiUrl+"/alert-watchers?names="+awName.Text(), xAuthToken, FBData)
+			//check if it was a success and provide the output.
+			if statusCode == 200 {
+				//decode the response from a successfull call to a map interface//
+				var r map[string]interface{}
+				json.Unmarshal([]byte(result), &r)
+				email, d, o, err := jsonparser.Get(result, "items", "[0]", "name")
+				fmt.Print("jsonparser out: ", d, o, err)
+				enabled, d, o, err := jsonparser.Get(result, "items", "[0]", "enabled")
+				fmt.Print("jsonparser out: ", d, o, err)
+				//print results to output field
+				initResult.SetText("Success!\n\nApplied the following:\n\nEmail Added: " + string(email) + "\nEnabled: " + string(enabled) + "\n\nPlease proceed to the Validation Form")
+			} else {
+				initResult.SetText("Error: " + string(result))
+			}
 		}
 	})
 
@@ -2116,15 +2142,15 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
+		//validate
 		err := validate.Var(awName.Text(), "email")
 		if err != nil {
 			initResult.SetText("Please provide an email address")
 			passed = false
 		}
 		if passed == true {
-			result := deleteAPICallFB(apiUrl+"/alert-watchers?names="+awName.Text(), xAuthToken)
-			initResult.SetText(result)
+			result := apiCallFB("DELETE", apiUrl+"/alert-watchers?names="+awName.Text(), xAuthToken, nil)
+			initResult.SetText(string(result))
 		}
 	})
 
@@ -2133,31 +2159,32 @@ func initializeFBTab() ui.Control {
 		var passed bool = true
 		validate := validator.New()
 
-		//validate ntp servers
+		//validate alert watcher email
 		err2 := validate.Var(awName.Text(), "email")
 		if err2 != nil {
 			initResult.SetText("Please provide an email address")
 			passed = false
 		}
-
-		if awEnabled.Selected() == -1 {
-			initResult.SetText("Please provide select true or false for enabled")
+		//validate and store if aw is enabled or disabled.
+		var awIsEnabled = ""
+		if awEnabled.Selected() > -1 {
+			if awEnabled.Selected() == 0 {
+				awIsEnabled = "true"
+			}
+			if awEnabled.Selected() == 1 {
+				awIsEnabled = "false"
+			}
+		} else {
+			initResult.SetText("Please select true or false for Enabled.")
 			passed = false
 		}
 
-		var awIsEnabled = ""
-		if awEnabled.Selected() == 0 {
-			awIsEnabled = "true"
-		}
-		if awEnabled.Selected() == 1 {
-			awIsEnabled = "false"
-		}
+		// if all validation passes proceed
 		if passed == true {
 
 			type FAB struct {
 				Enabled string `json:"enabled"`
 			}
-
 			//initialize FAS struct object
 			FB := &FAB{}
 			FB.Enabled = awIsEnabled
@@ -2169,64 +2196,35 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := postAPICall2FB(apiUrl+"/alert-watchers?names="+awName.Text(), xAuthToken, FBData)
-			initResult.SetText(result)
-		}
-	})
-
-	adminsGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/admins", xAuthToken)
-		initResult.SetText(string(result))
-	})
-
-	adminsPatchButton.OnClicked(func(*ui.Button) {
-		//form validation object instantiation
-		var passed bool = true
-		validate := validator.New()
-
-		//validate ntp servers
-		err2 := validate.Var(adminName.Text(), "required")
-		if err2 != nil {
-			initResult.SetText("Please provide an admin username")
-			passed = false
-		}
-		if adminsCreateToken.Selected() == -1 {
-			initResult.SetText("Please provide select true or false for enabled")
-			passed = false
-		}
-
-		var adminsCreateTokenIsEnabled = ""
-		if adminsCreateToken.Selected() == 0 {
-			adminsCreateTokenIsEnabled = "true"
-		}
-		if adminsCreateToken.Selected() == 1 {
-			adminsCreateTokenIsEnabled = "false"
-		}
-
-		if passed == true {
-
-			type FAB struct {
-				CToken string `json:"create_api_token"`
+			//make the POST rest api call to the array
+			result := apiCallFB("POST", apiUrl+"/alert-watchers?names="+awName.Text(), xAuthToken, FBData)
+			//check if it was successful and present results.
+			if statusCode == 200 {
+				//decode the response from a successfull call to a map interface//
+				var r map[string]interface{}
+				json.Unmarshal([]byte(result), &r)
+				email, d, o, err := jsonparser.Get(result, "items", "[0]", "name")
+				fmt.Print("jsonparser out: ", d, o, err)
+				enabled, d, o, err := jsonparser.Get(result, "items", "[0]", "enabled")
+				fmt.Print("jsonparser out: ", d, o, err)
+				//print results to output field
+				initResult.SetText("Success!\n\nApplied the following:\n\nEmail Added: " + string(email) + "\nEnabled: " + string(enabled) + "\n\nPlease proceed to the Validation Form")
+				//used for the progress bar
+				if t, found := steps[8]; found {
+					fmt.Println("step ", t, ", already completed not changing progress bar.")
+				} else {
+					steps[8] = "complete"
+					progressCounter = progressCounter + 10
+					prog.SetValue(progressCounter)
+				}
+			} else {
+				initResult.SetText("Error: " + string(result))
 			}
-
-			//initialize FAS struct object
-			FB := &FAB{}
-			FB.CToken = adminsCreateTokenIsEnabled
-
-			//marshal (json encode) the map into a json string
-			FBData, err := json.Marshal(FB)
-			if err != nil {
-				fmt.Println(err.Error())
-				return
-			}
-
-			result := patchAPICallFB(apiUrl+"/admins?names="+adminName.Text(), xAuthToken, FBData)
-			initResult.SetText(result)
 		}
 	})
 
 	finalGetButton.OnClicked(func(*ui.Button) {
-		result := getAPICallFB(apiUrl+"/setup/validation", xAuthToken)
+		result := apiCallFB("GET", apiUrl+"/setup/validation", xAuthToken, nil)
 		initResult.SetText(string(result))
 	})
 
@@ -2234,9 +2232,9 @@ func initializeFBTab() ui.Control {
 		//form validation object instantiation
 		var passed bool = true
 
-		//validate ntp servers
+		//validate
 		if finalSetupComplete.Selected() == -1 {
-			initResult.SetText("Please provide select true or false")
+			initResult.SetText("Please select true or false")
 			passed = false
 		}
 
@@ -2265,8 +2263,8 @@ func initializeFBTab() ui.Control {
 				return
 			}
 
-			result := patchAPICallFB(apiUrl+"/setup/finalization", xAuthToken, FBData)
-			initResult.SetText(result)
+			result := apiCallFB("PATCH", apiUrl+"/setup/finalization", xAuthToken, FBData)
+			initResult.SetText(string(result))
 		}
 	})
 	//END Button Actions from forms//
@@ -2274,9 +2272,9 @@ func initializeFBTab() ui.Control {
 	return hbox
 }
 
-//define the UI interface//
+//FUNCTION TO SETUP UI INTERFACE//
 func setupUI() {
-	mainwin = ui.NewWindow("Pure Storage Zero Touch Provisioner for Flash Array", 800, 480, true)
+	mainwin = ui.NewWindow("Pure Storage Zero Touch Provisioner", 500, 300, true)
 	mainwin.OnClosing(func(*ui.Window) bool {
 		ui.Quit()
 		return true
@@ -2299,7 +2297,7 @@ func setupUI() {
 	mainwin.Show()
 }
 
-//main//
+//MAIN//
 func main() {
 	ui.Main(setupUI)
 }
