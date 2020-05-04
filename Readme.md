@@ -10,7 +10,9 @@ Download the application binary relevant to your desktop OS and execute it.  Fil
 
 The single console application has two tabs: Flash Array and Flash Blade.
 
-[![Video Tutorial](assets/ZTP_HowTo/ZTP_HowTo_First_Frame.png)](https://www.youtube.com/embed/LN13cpuA3Jc)
+## Video Tutorial
+
+[![Video Tutorial](assets/ZTP_HowTo/ZTP_HowTo_First_Frame.png)](https://youtu.be/LN13cpuA3Jc)
 
 #### Flash Array
 
