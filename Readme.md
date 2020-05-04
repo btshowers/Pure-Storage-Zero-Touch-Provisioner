@@ -70,6 +70,12 @@ FlashBlade
 
 ![Blank Tab for Flash Blade](assets/FB.PNG)
 
+<figure class="video_container">
+  <video controls="true" allowfullscreen="true" poster="`https://gitlab.com/btshowers/ztp/-/blob/master/assets/ZTP_HowTo/ZTP_HowTo_First_Frame.png`">
+    <source src="https://gitlab.com/btshowers/ztp/-/raw/master/assets/ZTP_HowTo/ZTP_HowTo.mp4" type="video/mp4">
+  </video>
+</figure>
+
 ## Built With
 
 * [UI](https://github.com/andlabs/ui/) - The GUI framework used
