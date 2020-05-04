@@ -10,6 +10,8 @@ Download the application binary relevant to your desktop OS and execute it.  Fil
 
 The single console application has two tabs: Flash Array and Flash Blade.
 
+[(assets/ZTP_HowTo/ZTP_HowTo_First_Frame.png)](https://www.youtube.com/embed/LN13cpuA3Jc)
+
 #### Flash Array
 
 ![Blank Tab for Flash Array](assets/FA.PNG)
@@ -70,11 +72,7 @@ FlashBlade
 
 ![Blank Tab for Flash Blade](assets/FB.PNG)
 
-<figure class="video_container">
-  <video controls="true" allowfullscreen="true" poster="`https://gitlab.com/btshowers/ztp/-/blob/master/assets/ZTP_HowTo/ZTP_HowTo_First_Frame.png`">
-    <source src="https://gitlab.com/btshowers/ztp/-/raw/master/assets/ZTP_HowTo/ZTP_HowTo.mp4" type="video/mp4">
-  </video>
-</figure>
+
 
 ## Built With
 
