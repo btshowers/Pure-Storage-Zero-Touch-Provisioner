@@ -12,7 +12,7 @@ The single console application has two tabs: Flash Array and Flash Blade.
 
 ## Video Tutorial
 
-[![Video Tutorial](assets/ZTP_HowTo/ZTP_HowTo_First_Frame.png)](https://youtu.be/LN13cpuA3Jc)
+[![Video Tutorial](assets/ZTP_HowTo/ZTP_HowTo_First_Frame.png)](https://youtu.be/RdeUb9ZqAbY)
 
 #### Flash Array
 
